@@ -42,10 +42,10 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-blue-900">Greenvest Capital</CardTitle>
+          <CardTitle className="text-2xl font-bold text-primary">Greenvest Capital</CardTitle>
           <CardDescription>MCA Deal Management System</CardDescription>
         </CardHeader>
         <CardContent>
@@ -72,7 +72,7 @@ const AuthPage = () => {
             </div>
             <Button 
               type="submit" 
-              className="w-full bg-blue-600 hover:bg-blue-700"
+              className="w-full"
               disabled={loading}
             >
               {loading ? 'Signing In...' : 'Sign In'}

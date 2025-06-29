@@ -32,7 +32,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div 
@@ -42,20 +42,20 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       )}
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 ${
+        sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}>
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
-          <h1 className="text-xl font-bold text-blue-900">Greenvest Capital</h1>
+          <h1 className="text-xl font-bold text-primary">Greenvest Capital</h1>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden"
+            className="lg:hidden text-gray-500 hover:text-gray-700"
           >
             <X className="h-6 w-6" />
           </button>
         </div>
         
-        <nav className="mt-8">
+        <nav className="mt-8 flex-1">
           <div className="px-4 space-y-2">
             {navigation.map((item) => {
               const Icon = item.icon;
@@ -65,7 +65,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
                   to={item.href}
                   className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
                     isActive(item.href)
-                      ? 'bg-blue-100 text-blue-700'
+                      ? 'bg-primary/10 text-primary border-r-2 border-primary'
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                   onClick={() => setSidebarOpen(false)}
@@ -80,14 +80,16 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600 truncate">
-              {user?.email}
-            </span>
+            <div className="flex-1 min-w-0">
+              <span className="text-sm text-gray-600 block truncate">
+                {user?.email}
+              </span>
+            </div>
             <Button
               onClick={handleSignOut}
               variant="ghost"
               size="sm"
-              className="text-gray-500 hover:text-red-600"
+              className="text-gray-500 hover:text-red-600 ml-2 flex-shrink-0"
             >
               <LogOut className="h-4 w-4" />
             </Button>
@@ -95,9 +97,9 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="lg:pl-64">
-        {/* Top navigation */}
+      {/* Main content area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Mobile top navigation */}
         <div className="bg-white shadow-sm border-b border-gray-200 lg:hidden">
           <div className="flex items-center justify-between h-16 px-4">
             <button
@@ -106,7 +108,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
             >
               <Menu className="h-6 w-6" />
             </button>
-            <h1 className="text-lg font-semibold text-gray-900">
+            <h1 className="text-lg font-semibold text-primary">
               Greenvest Capital
             </h1>
             <div className="w-6" />
@@ -114,7 +116,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         </div>
 
         {/* Page content */}
-        <main className="p-6">
+        <main className="flex-1 p-6">
           {children}
         </main>
       </div>
