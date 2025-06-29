@@ -1,17 +1,14 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Plus, Search, Filter } from 'lucide-react';
-
 const Deals = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Temporary empty data structure for the table
   const deals: any[] = [];
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Application Received':
@@ -28,30 +25,26 @@ const Deals = () => {
         return 'bg-gray-100 text-gray-800';
     }
   };
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(amount);
   };
-
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
-      day: 'numeric',
+      day: 'numeric'
     });
   };
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Deals</h1>
+          <h1 className="text-2xl font-bold text-slate-300">Deals</h1>
           <p className="text-gray-600 mt-1">
             Manage your MCA funding applications and track their progress.
           </p>
@@ -68,12 +61,7 @@ const Deals = () => {
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search deals by company name, amount, or stage..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+              <Input placeholder="Search deals by company name, amount, or stage..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
             </div>
             <Button variant="outline" className="sm:w-auto">
               <Filter className="h-4 w-4 mr-2" />
@@ -89,8 +77,7 @@ const Deals = () => {
           <CardTitle>All Deals</CardTitle>
         </CardHeader>
         <CardContent>
-          {deals.length === 0 ? (
-            <div className="text-center py-12">
+          {deals.length === 0 ? <div className="text-center py-12">
               <div className="mx-auto h-12 w-12 text-gray-400 mb-4">
                 <Plus className="h-12 w-12" />
               </div>
@@ -102,9 +89,7 @@ const Deals = () => {
                 <Plus className="h-4 w-4 mr-2" />
                 Create First Deal
               </Button>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
+            </div> : <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-200">
@@ -116,8 +101,7 @@ const Deals = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {deals.map((deal) => (
-                    <tr key={deal.id} className="border-b border-gray-100 hover:bg-gray-50">
+                  {deals.map(deal => <tr key={deal.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="py-3 px-4">
                         <div className="font-medium text-gray-900">{deal.company_name}</div>
                       </td>
@@ -137,16 +121,12 @@ const Deals = () => {
                           View Details
                         </Button>
                       </td>
-                    </tr>
-                  ))}
+                    </tr>)}
                 </tbody>
               </table>
-            </div>
-          )}
+            </div>}
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default Deals;
