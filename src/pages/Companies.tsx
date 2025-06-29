@@ -1,15 +1,12 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Building2 } from 'lucide-react';
-
 const Companies = () => {
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Companies</h1>
+          <h1 className="text-2xl font-bold text-slate-300">Companies</h1>
           <p className="text-gray-600 mt-1">
             Manage your client companies and their information.
           </p>
@@ -39,8 +36,6 @@ const Companies = () => {
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default Companies;
