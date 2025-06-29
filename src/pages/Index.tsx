@@ -60,7 +60,7 @@ const Index = () => {
           <div className="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
             <Link to="/auth">
               <Button size="lg" className="bg-blue-600 hover:bg-blue-700">
-                Get Started
+                Access Dashboard
               </Button>
             </Link>
           </div>
@@ -92,13 +92,13 @@ const Index = () => {
         <div className="mt-20 text-center">
           <Card className="bg-blue-600 text-white">
             <CardContent className="py-12">
-              <h2 className="text-3xl font-bold mb-4">Ready to get started?</h2>
+              <h2 className="text-3xl font-bold mb-4">Ready to access your dashboard?</h2>
               <p className="text-xl mb-8 text-blue-100">
-                Join Greenvest Capital's deal management platform today.
+                Sign in to Greenvest Capital's deal management platform.
               </p>
               <Link to="/auth">
                 <Button size="lg" variant="secondary">
-                  Sign Up Now
+                  Sign In Now
                 </Button>
               </Link>
             </CardContent>
