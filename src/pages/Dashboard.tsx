@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, DollarSign, Clock, CheckCircle, TrendingUp } from 'lucide-react';
+import { Plus, DollarSign, Clock, CheckCircle, TrendingUp, FileText } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
 const Dashboard = () => {
