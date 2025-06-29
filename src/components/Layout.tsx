@@ -32,7 +32,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen gradient-bg flex">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div 
@@ -42,35 +42,37 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       )}
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 ${
+      <div className={`fixed inset-y-0 left-0 z-50 w-64 glass-effect shadow-2xl transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}>
-        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
+        <div className="flex items-center justify-between h-16 px-6 border-b border-border/50">
           <h1 className="text-xl font-bold text-primary">Greenvest Capital</h1>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden text-gray-500 hover:text-gray-700"
+            className="lg:hidden text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-6 w-6" />
           </button>
         </div>
         
-        <nav className="mt-8 flex-1">
-          <div className="px-4 space-y-2">
+        <nav className="mt-8 flex-1 px-4">
+          <div className="space-y-2">
             {navigation.map((item) => {
               const Icon = item.icon;
               return (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 group ${
                     isActive(item.href)
-                      ? 'bg-primary/10 text-primary border-r-2 border-primary'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-accent/50'
                   }`}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <Icon className="h-5 w-5 mr-3" />
+                  <Icon className={`h-5 w-5 mr-3 transition-transform duration-200 ${
+                    isActive(item.href) ? 'scale-110' : 'group-hover:scale-105'
+                  }`} />
                   {item.name}
                 </Link>
               );
@@ -78,10 +80,10 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           </div>
         </nav>
 
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
-          <div className="flex items-center justify-between">
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border/50">
+          <div className="flex items-center justify-between bg-accent/30 rounded-xl p-3">
             <div className="flex-1 min-w-0">
-              <span className="text-sm text-gray-600 block truncate">
+              <span className="text-sm text-muted-foreground block truncate">
                 {user?.email}
               </span>
             </div>
@@ -89,7 +91,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               onClick={handleSignOut}
               variant="ghost"
               size="sm"
-              className="text-gray-500 hover:text-red-600 ml-2 flex-shrink-0"
+              className="text-muted-foreground hover:text-destructive ml-2 flex-shrink-0 h-8 w-8 p-0"
             >
               <LogOut className="h-4 w-4" />
             </Button>
@@ -100,11 +102,11 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile top navigation */}
-        <div className="bg-white shadow-sm border-b border-gray-200 lg:hidden">
+        <div className="glass-effect border-b border-border/50 lg:hidden">
           <div className="flex items-center justify-between h-16 px-4">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="text-gray-600 hover:text-gray-900"
+              className="text-muted-foreground hover:text-foreground transition-colors"
             >
               <Menu className="h-6 w-6" />
             </button>

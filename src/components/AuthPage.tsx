@@ -42,44 +42,49 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-primary">Greenvest Capital</CardTitle>
-          <CardDescription>MCA Deal Management System</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSignIn} className="space-y-4">
+    <div className="min-h-screen gradient-bg flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="card-gradient rounded-2xl p-8 shadow-2xl">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/20 rounded-2xl mb-4">
+              <div className="w-8 h-8 bg-primary rounded-lg"></div>
+            </div>
+            <h1 className="text-2xl font-bold text-foreground mb-2">Greenvest Capital</h1>
+            <p className="text-muted-foreground">MCA Deal Management System</p>
+          </div>
+          <form onSubmit={handleSignIn} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-foreground">Email</Label>
               <Input
                 id="email"
                 name="email"
                 type="email"
                 placeholder="Enter your email"
+                className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-primary focus:border-primary rounded-xl h-12"
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-foreground">Password</Label>
               <Input
                 id="password"
                 name="password"
                 type="password"
                 placeholder="Enter your password"
+                className="bg-input border-border text-foreground placeholder:text-muted-foreground focus:ring-primary focus:border-primary rounded-xl h-12"
                 required
               />
             </div>
             <Button 
               type="submit" 
-              className="w-full"
+              className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-medium shadow-lg shadow-primary/25 transition-all duration-200"
               disabled={loading}
             >
               {loading ? 'Signing In...' : 'Sign In'}
             </Button>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
