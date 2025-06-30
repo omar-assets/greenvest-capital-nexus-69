@@ -204,46 +204,61 @@ export type Database = {
       deals: {
         Row: {
           amount_requested: number
+          average_daily_balance: number | null
           company_id: string | null
           company_name: string
           contact_name: string | null
           created_at: string
+          credit_score: number | null
           deal_number: string
           deleted_at: string | null
           email: string | null
+          factor_rate: number | null
           id: string
+          monthly_revenue: number | null
           phone: string | null
           stage: string
+          term_months: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
           amount_requested: number
+          average_daily_balance?: number | null
           company_id?: string | null
           company_name: string
           contact_name?: string | null
           created_at?: string
+          credit_score?: number | null
           deal_number?: string
           deleted_at?: string | null
           email?: string | null
+          factor_rate?: number | null
           id?: string
+          monthly_revenue?: number | null
           phone?: string | null
           stage?: string
+          term_months?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
           amount_requested?: number
+          average_daily_balance?: number | null
           company_id?: string | null
           company_name?: string
           contact_name?: string | null
           created_at?: string
+          credit_score?: number | null
           deal_number?: string
           deleted_at?: string | null
           email?: string | null
+          factor_rate?: number | null
           id?: string
+          monthly_revenue?: number | null
           phone?: string | null
           stage?: string
+          term_months?: number | null
           updated_at?: string
           user_id?: string
         }

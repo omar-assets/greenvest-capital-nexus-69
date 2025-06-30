@@ -9,8 +9,11 @@ interface EditableFieldProps {
   label: string;
   value: string | number;
   onSave: (value: string | number) => void;
-  type?: 'text' | 'email' | 'tel' | 'number' | 'textarea';
+  type?: 'text' | 'email' | 'tel' | 'number' | 'integer' | 'textarea';
   placeholder?: string;
+  min?: number;
+  max?: number;
+  step?: number;
 }
 
 const EditableField = ({ 
@@ -18,13 +21,24 @@ const EditableField = ({
   value, 
   onSave, 
   type = 'text', 
-  placeholder 
+  placeholder,
+  min,
+  max,
+  step
 }: EditableFieldProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(value.toString());
 
   const handleSave = () => {
-    const finalValue = type === 'number' ? parseFloat(editValue) : editValue;
+    let finalValue: string | number = editValue;
+    
+    if (type === 'number' || type === 'integer') {
+      finalValue = type === 'integer' ? parseInt(editValue) : parseFloat(editValue);
+      if (isNaN(finalValue)) {
+        finalValue = 0;
+      }
+    }
+    
     onSave(finalValue);
     setIsEditing(false);
   };
@@ -32,6 +46,23 @@ const EditableField = ({
   const handleCancel = () => {
     setEditValue(value.toString());
     setIsEditing(false);
+  };
+
+  const formatDisplayValue = (val: string | number) => {
+    if (type === 'number' && typeof val === 'number') {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(val);
+    }
+    
+    if (type === 'integer' && typeof val === 'number') {
+      return val.toString();
+    }
+    
+    return val || 'Not provided';
   };
 
   if (isEditing) {
@@ -49,10 +80,13 @@ const EditableField = ({
             />
           ) : (
             <Input
-              type={type}
+              type={type === 'integer' ? 'number' : type}
               value={editValue}
               onChange={(e) => setEditValue(e.target.value)}
               placeholder={placeholder}
+              min={min}
+              max={max}
+              step={step}
               className="bg-slate-700 border-slate-600 text-slate-200"
             />
           )}
@@ -72,15 +106,7 @@ const EditableField = ({
       <label className="text-sm font-medium text-slate-300">{label}</label>
       <div className="flex items-center justify-between group">
         <span className="text-slate-200">
-          {type === 'number' && typeof value === 'number' 
-            ? new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: 'USD',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
-              }).format(value)
-            : value || 'Not provided'
-          }
+          {formatDisplayValue(value)}
         </span>
         <Button
           size="sm"
