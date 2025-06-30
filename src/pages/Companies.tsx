@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +25,7 @@ const Companies = () => {
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [isBackfilling, setIsBackfilling] = useState(false);
   const [isSyncingWebhook, setIsSyncingWebhook] = useState(false);
+  const [isValidatingWebhook, setIsValidatingWebhook] = useState(false);
   
   const { companies, isLoading, findOrCreateCompany } = useCompanies();
   const { deals } = useDeals();
@@ -50,6 +50,59 @@ const Companies = () => {
     return getCompanyDeals(company).length;
   };
 
+  // Function to validate webhook configuration
+  const handleValidateWebhook = async () => {
+    setIsValidatingWebhook(true);
+    try {
+      console.log('Starting webhook validation...');
+      
+      const { data, error } = await supabase.functions.invoke('validate-webhook-auth');
+      
+      if (error) {
+        console.error('Webhook validation error:', error);
+        toast({
+          title: "Validation Error",
+          description: error.message || "Failed to validate webhook configuration",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('Webhook validation response:', data);
+
+      if (data.success) {
+        toast({
+          title: "Webhook Valid",
+          description: `Webhook is accessible and authentication is working. Response time: ${data.responseTime}ms`
+        });
+      } else {
+        let description = data.error || "Unknown validation error";
+        if (data.status === 'not_found') {
+          description = "Webhook URL not found. Please check the URL and ensure your n8n workflow is active.";
+        } else if (data.status === 'auth_failed') {
+          description = "Authentication failed. Please check your Basic Auth credentials.";
+        } else if (data.status === 'timeout') {
+          description = "Webhook request timed out. Please check if your n8n instance is running.";
+        }
+
+        toast({
+          title: "Webhook Validation Failed",
+          description,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error during webhook validation:', error);
+      toast({
+        title: "Validation Error",
+        description: "An unexpected error occurred during validation. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsValidatingWebhook(false);
+    }
+  };
+
   // Function to sync applications from webhook
   const handleSyncApplications = async () => {
     setIsSyncingWebhook(true);
@@ -70,10 +123,19 @@ const Companies = () => {
 
       console.log('Webhook sync response:', data);
 
+      if (data.validationError) {
+        toast({
+          title: "Webhook Validation Failed",
+          description: data.details || "Please validate your webhook configuration first.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       if (data.success) {
         toast({
           title: "Sync Complete",
-          description: `Successfully synced ${data.totalApplications} applications. Created ${data.companiesCreated} companies, updated ${data.companiesUpdated} companies, and created ${data.dealsCreated} deals.`
+          description: `Successfully synced ${data.totalApplications} applications. Created ${data.companiesCreated} companies, updated ${data.companiesUpdated || 0} companies, and created ${data.dealsCreated} deals.`
         });
         
         if (data.errors && data.errors.length > 0) {
@@ -87,7 +149,7 @@ const Companies = () => {
       } else {
         toast({
           title: "Sync Failed",
-          description: "Failed to sync applications. Please try again.",
+          description: data.details || "Failed to sync applications. Please try again.",
           variant: "destructive"
         });
       }
@@ -185,6 +247,15 @@ const Companies = () => {
           </p>
         </div>
         <div className="flex gap-2 mt-4 sm:mt-0">
+          <Button
+            variant="outline"
+            onClick={handleValidateWebhook}
+            disabled={isValidatingWebhook}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isValidatingWebhook ? 'animate-spin' : ''}`} />
+            {isValidatingWebhook ? 'Validating...' : 'Test Webhook'}
+          </Button>
           <Button
             variant="outline"
             onClick={handleSyncApplications}

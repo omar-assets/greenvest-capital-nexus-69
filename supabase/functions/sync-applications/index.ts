@@ -53,22 +53,47 @@ serve(async (req) => {
 
     console.log('Starting webhook sync for user:', user.id);
 
-    // Get webhook credentials from environment
-    const webhookUrl = Deno.env.get('N8N_WEBHOOK_URL');
-    const username = Deno.env.get('N8N_BASIC_AUTH_USERNAME');
-    const password = Deno.env.get('N8N_BASIC_AUTH_PASSWORD');
-
-    if (!webhookUrl || !username || !password) {
-      console.error('Missing webhook configuration');
-      return new Response(JSON.stringify({ error: 'Webhook configuration missing' }), {
+    // First, validate webhook connectivity
+    console.log('Validating webhook connectivity...');
+    const validationResponse = await supabaseClient.functions.invoke('validate-webhook-auth');
+    
+    if (validationResponse.error) {
+      console.error('Webhook validation failed:', validationResponse.error);
+      return new Response(JSON.stringify({ 
+        error: 'Webhook validation failed',
+        details: validationResponse.error.message,
+        validationError: true
+      }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
+    const validation = validationResponse.data;
+    if (!validation.success) {
+      console.error('Webhook validation unsuccessful:', validation);
+      return new Response(JSON.stringify({ 
+        error: 'Webhook validation failed',
+        details: validation.error,
+        status: validation.status,
+        webhookUrl: validation.webhookUrl,
+        validationError: true
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log('Webhook validation successful, proceeding with sync...');
+
+    // Get webhook credentials from environment
+    const webhookUrl = Deno.env.get('N8N_WEBHOOK_URL');
+    const username = Deno.env.get('N8N_BASIC_AUTH_USERNAME');
+    const password = Deno.env.get('N8N_BASIC_AUTH_PASSWORD');
+
     // Make authenticated request to n8n webhook
     const basicAuth = btoa(`${username}:${password}`);
-    console.log('Calling webhook:', webhookUrl);
+    console.log('Calling webhook for data:', webhookUrl);
 
     const webhookResponse = await fetch(webhookUrl, {
       method: 'GET',
@@ -80,13 +105,50 @@ serve(async (req) => {
 
     if (!webhookResponse.ok) {
       console.error('Webhook request failed:', webhookResponse.status, webhookResponse.statusText);
-      return new Response(JSON.stringify({ error: 'Failed to fetch applications from webhook' }), {
+      const errorText = await webhookResponse.text();
+      console.error('Error response:', errorText);
+      
+      return new Response(JSON.stringify({ 
+        error: 'Failed to fetch applications from webhook',
+        status: webhookResponse.status,
+        statusText: webhookResponse.statusText,
+        details: errorText
+      }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const applications: WebhookApplication[] = await webhookResponse.json();
+    const responseText = await webhookResponse.text();
+    console.log('Raw webhook response:', responseText);
+
+    let applications: WebhookApplication[];
+    try {
+      applications = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Failed to parse webhook response as JSON:', parseError);
+      return new Response(JSON.stringify({ 
+        error: 'Invalid JSON response from webhook',
+        details: parseError.message,
+        rawResponse: responseText.substring(0, 500) // First 500 chars for debugging
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    if (!Array.isArray(applications)) {
+      console.error('Webhook response is not an array:', typeof applications);
+      return new Response(JSON.stringify({ 
+        error: 'Webhook response is not an array',
+        responseType: typeof applications,
+        response: applications
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     console.log(`Received ${applications.length} applications from webhook`);
 
     let companiesCreated = 0;
@@ -215,6 +277,7 @@ serve(async (req) => {
       dealsCreated,
       errors,
       syncedAt: new Date().toISOString(),
+      validationPassed: true,
     };
 
     console.log('Sync completed:', result);
