@@ -15,6 +15,7 @@ import DocumentGrid from '@/components/deals/DocumentGrid';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useRef } from 'react';
+import UnderwritingTab from '@/components/deals/UnderwritingTab';
 
 const DealDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -176,6 +177,9 @@ const DealDetails = () => {
                 <TabsTrigger value="documents" className="data-[state=active]:bg-slate-700">
                   Documents ({documents.length})
                 </TabsTrigger>
+                <TabsTrigger value="underwriting" className="data-[state=active]:bg-slate-700">
+                  Underwriting
+                </TabsTrigger>
                 <TabsTrigger value="activities" className="data-[state=active]:bg-slate-700">
                   Activities
                 </TabsTrigger>
@@ -218,6 +222,10 @@ const DealDetails = () => {
                     )}
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              <TabsContent value="underwriting">
+                <UnderwritingTab deal={deal} />
               </TabsContent>
 
               <TabsContent value="activities">

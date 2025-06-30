@@ -248,6 +248,47 @@ export type Database = {
           },
         ]
       }
+      deal_underwriting_checklist: {
+        Row: {
+          bank_statements_reviewed: boolean | null
+          credit_checked: boolean | null
+          deal_id: string
+          documents_complete: boolean | null
+          id: string
+          updated_at: string | null
+          updated_by: string
+          user_id: string
+        }
+        Insert: {
+          bank_statements_reviewed?: boolean | null
+          credit_checked?: boolean | null
+          deal_id: string
+          documents_complete?: boolean | null
+          id?: string
+          updated_at?: string | null
+          updated_by: string
+          user_id: string
+        }
+        Update: {
+          bank_statements_reviewed?: boolean | null
+          credit_checked?: boolean | null
+          deal_id?: string
+          documents_complete?: boolean | null
+          id?: string
+          updated_at?: string | null
+          updated_by?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_underwriting_checklist_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals: {
         Row: {
           amount_requested: number
@@ -258,6 +299,7 @@ export type Database = {
           created_at: string
           credit_score: number | null
           deal_number: string
+          decline_reason: string | null
           deleted_at: string | null
           email: string | null
           factor_rate: number | null
@@ -266,6 +308,10 @@ export type Database = {
           phone: string | null
           stage: string
           term_months: number | null
+          underwriter_id: string | null
+          underwriting_date: string | null
+          underwriting_notes: string | null
+          underwriting_status: string | null
           updated_at: string
           user_id: string
         }
@@ -278,6 +324,7 @@ export type Database = {
           created_at?: string
           credit_score?: number | null
           deal_number?: string
+          decline_reason?: string | null
           deleted_at?: string | null
           email?: string | null
           factor_rate?: number | null
@@ -286,6 +333,10 @@ export type Database = {
           phone?: string | null
           stage?: string
           term_months?: number | null
+          underwriter_id?: string | null
+          underwriting_date?: string | null
+          underwriting_notes?: string | null
+          underwriting_status?: string | null
           updated_at?: string
           user_id: string
         }
@@ -298,6 +349,7 @@ export type Database = {
           created_at?: string
           credit_score?: number | null
           deal_number?: string
+          decline_reason?: string | null
           deleted_at?: string | null
           email?: string | null
           factor_rate?: number | null
@@ -306,6 +358,10 @@ export type Database = {
           phone?: string | null
           stage?: string
           term_months?: number | null
+          underwriter_id?: string | null
+          underwriting_date?: string | null
+          underwriting_notes?: string | null
+          underwriting_status?: string | null
           updated_at?: string
           user_id?: string
         }
