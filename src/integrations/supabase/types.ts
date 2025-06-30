@@ -28,7 +28,7 @@ export type Database = {
           company_name: string
           contact_name?: string | null
           created_at?: string
-          deal_number: string
+          deal_number?: string
           email?: string | null
           id?: string
           phone?: string | null

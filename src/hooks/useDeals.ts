@@ -42,6 +42,7 @@ export const useDeals = () => {
         .insert({
           ...dealData,
           user_id: user.id,
+          deal_number: '', // Empty string that will be replaced by trigger
         })
         .select()
         .single();
