@@ -9,6 +9,48 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      deals: {
+        Row: {
+          amount_requested: number
+          company_name: string
+          contact_name: string | null
+          created_at: string
+          deal_number: string
+          email: string | null
+          id: string
+          phone: string | null
+          stage: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_requested: number
+          company_name: string
+          contact_name?: string | null
+          created_at?: string
+          deal_number: string
+          email?: string | null
+          id?: string
+          phone?: string | null
+          stage?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_requested?: number
+          company_name?: string
+          contact_name?: string | null
+          created_at?: string
+          deal_number?: string
+          email?: string | null
+          id?: string
+          phone?: string | null
+          stage?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           company_role: string | null
@@ -41,7 +83,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_deal_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
