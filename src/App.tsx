@@ -11,6 +11,7 @@ import Deals from '@/pages/Deals';
 import DealDetails from '@/pages/DealDetails';
 import Companies from '@/pages/Companies';
 import CompanyDetails from '@/pages/CompanyDetails';
+import Analytics from '@/pages/Analytics';
 import NotFound from '@/pages/NotFound';
 import './App.css';
 
@@ -52,6 +53,13 @@ const AppRoutes = () => {
         <ProtectedRoute>
           <Layout>
             <CompanyDetails />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/analytics" element={
+        <ProtectedRoute>
+          <Layout>
+            <Analytics />
           </Layout>
         </ProtectedRoute>
       } />
