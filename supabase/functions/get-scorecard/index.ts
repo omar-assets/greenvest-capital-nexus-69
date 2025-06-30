@@ -289,7 +289,7 @@ serve(async (req) => {
           console.log(`Making webhook request to: ${webhookUrl}`);
           
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+          const timeoutId = setTimeout(() => controller.abort(), 60000); // Increased to 60 seconds
           
           try {
             const response = await fetch(webhookUrl, {
@@ -313,7 +313,7 @@ serve(async (req) => {
           } catch (error) {
             clearTimeout(timeoutId);
             if (error.name === 'AbortError') {
-              throw new Error('Webhook request timed out after 30 seconds');
+              throw new Error('Webhook request timed out after 60 seconds');
             }
             throw error;
           }
@@ -331,22 +331,22 @@ serve(async (req) => {
         throw new Error('Invalid webhook response: Expected JSON object');
       }
 
-      // Check if scorecard exists in response
-      if (!webhookData.scorecard) {
-        console.log('No scorecard found in webhook response for app_id:', external_app_id);
+      // Check if scorecard data exists in the correct structure
+      if (!webhookData.scorecardData || !Array.isArray(webhookData.scorecardData) || webhookData.scorecardData.length === 0) {
+        console.log('No scorecard data found in webhook response for app_id:', external_app_id);
         
         await supabaseClient
           .from('scorecards')
           .update({
             status: 'error',
-            error_message: 'No scorecard found for this application',
+            error_message: 'No scorecard data found for this application',
             webhook_response_data: webhookData
           })
           .eq('id', scorecard.id)
 
         return new Response(
           JSON.stringify({ 
-            error: 'No scorecard found for this application',
+            error: 'No scorecard data found for this application',
             app_id: external_app_id,
             webhook_response: webhookData
           }),
@@ -359,88 +359,102 @@ serve(async (req) => {
 
       console.log('Processing scorecard data from webhook...');
 
+      // Extract the scorecard data and URL
+      const scorecardItem = webhookData.scorecardData[0];
+      const scorecardUrl = scorecardItem.url || null;
+      const scorecardBodyData = scorecardItem.body || {};
+
+      console.log('Scorecard URL:', scorecardUrl);
+      console.log('Scorecard body data keys:', Object.keys(scorecardBodyData));
+
       // Process and organize the webhook response data
       const sections = []
-      const scorecard_data = webhookData.scorecard
 
-      // Revenue Statistics
-      if (scorecard_data.revenue_statistics) {
+      // Metrics section
+      if (scorecardBodyData.metrics && scorecardBodyData.metrics.metricdata) {
         sections.push({
-          section_name: 'revenue_statistics',
-          section_data: scorecard_data.revenue_statistics,
+          section_name: 'metrics',
+          section_data: scorecardBodyData.metrics,
           display_order: 1
         })
       }
 
-      // Statements Summary
-      if (scorecard_data.statements_summary) {
+      // Daily balances section
+      if (scorecardBodyData.dailybalance) {
         sections.push({
-          section_name: 'statements_summary',
-          section_data: scorecard_data.statements_summary,
+          section_name: 'daily_balances',
+          section_data: scorecardBodyData.dailybalance,
           display_order: 2
         })
       }
 
-      // Transaction Categories
-      const transactionSections = [
-        'debit_transactions', 'credit_transactions', 'true_credit_transactions',
-        'nontrue_credit_transactions', 'mca_transactions', 'nsf_transactions',
-        'overdraft_transactions', 'large_transactions', 'transfers',
-        'mobile_payments', 'payment_processor_transactions'
-      ]
+      // Credit transactions
+      if (scorecardBodyData.credittrans) {
+        sections.push({
+          section_name: 'credit_transactions',
+          section_data: scorecardBodyData.credittrans,
+          display_order: 3
+        })
+      }
 
-      transactionSections.forEach((sectionName, index) => {
-        if (scorecard_data[sectionName]) {
+      // Debit transactions
+      if (scorecardBodyData.debittrans) {
+        sections.push({
+          section_name: 'debit_transactions',
+          section_data: scorecardBodyData.debittrans,
+          display_order: 4
+        })
+      }
+
+      // NSF transactions
+      if (scorecardBodyData.nsftrans) {
+        sections.push({
+          section_name: 'nsf_transactions',
+          section_data: scorecardBodyData.nsftrans,
+          display_order: 5
+        })
+      }
+
+      // Large transactions
+      if (scorecardBodyData.largetrans) {
+        sections.push({
+          section_name: 'large_transactions',
+          section_data: scorecardBodyData.largetrans,
+          display_order: 6
+        })
+      }
+
+      // Transfer transactions
+      if (scorecardBodyData.transfertrans) {
+        sections.push({
+          section_name: 'transfer_transactions',
+          section_data: scorecardBodyData.transfertrans,
+          display_order: 7
+        })
+      }
+
+      // MCA transactions
+      if (scorecardBodyData.mcatrans) {
+        sections.push({
+          section_name: 'mca_transactions',
+          section_data: scorecardBodyData.mcatrans,
+          display_order: 8
+        })
+      }
+
+      // Add any other data sections that might exist
+      const processedSections = ['metrics', 'dailybalance', 'credittrans', 'debittrans', 'nsftrans', 'largetrans', 'transfertrans', 'mcatrans'];
+      let orderCounter = 9;
+      
+      Object.keys(scorecardBodyData).forEach(key => {
+        if (!processedSections.includes(key) && scorecardBodyData[key]) {
           sections.push({
-            section_name: sectionName,
-            section_data: scorecard_data[sectionName],
-            display_order: index + 10
+            section_name: key,
+            section_data: scorecardBodyData[key],
+            display_order: orderCounter++
           })
         }
-      })
-
-      // Analysis Sections
-      if (scorecard_data.average_true_revenue_6_month) {
-        sections.push({
-          section_name: 'average_true_revenue_6_month',
-          section_data: scorecard_data.average_true_revenue_6_month,
-          display_order: 50
-        })
-      }
-
-      if (scorecard_data.average_true_revenue_12_month) {
-        sections.push({
-          section_name: 'average_true_revenue_12_month',
-          section_data: scorecard_data.average_true_revenue_12_month,
-          display_order: 51
-        })
-      }
-
-      // Daily/Monthly Data
-      if (scorecard_data.daily_balances) {
-        sections.push({
-          section_name: 'daily_balances',
-          section_data: scorecard_data.daily_balances,
-          display_order: 60
-        })
-      }
-
-      if (scorecard_data.monthly_cash_flows) {
-        sections.push({
-          section_name: 'monthly_cash_flows',
-          section_data: scorecard_data.monthly_cash_flows,
-          display_order: 61
-        })
-      }
-
-      // MCA Companies
-      if (scorecard_data.mca_companies) {
-        sections.push({
-          section_name: 'mca_companies',
-          section_data: scorecard_data.mca_companies,
-          display_order: 70
-        })
-      }
+      });
 
       console.log(`Processed ${sections.length} scorecard sections`);
 
@@ -449,7 +463,7 @@ serve(async (req) => {
         .from('scorecards')
         .update({
           status: 'completed',
-          scorecard_url: webhookData.scorecard_url || null,
+          scorecard_url: scorecardUrl,
           webhook_response_data: webhookData,
           completed_at: new Date().toISOString()
         })
@@ -478,7 +492,7 @@ serve(async (req) => {
         JSON.stringify({ 
           success: true, 
           scorecard_id: scorecard.id,
-          scorecard_url: webhookData.scorecard_url || null,
+          scorecard_url: scorecardUrl,
           sections_created: sections.length,
           source: 'api'
         }),

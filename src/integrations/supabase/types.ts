@@ -400,6 +400,56 @@ export type Database = {
           },
         ]
       }
+      document_metadata: {
+        Row: {
+          created_at: string | null
+          id: string
+          schema: string | null
+          title: string | null
+          url: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id: string
+          schema?: string | null
+          title?: string | null
+          url?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          schema?: string | null
+          title?: string | null
+          url?: string | null
+        }
+        Relationships: []
+      }
+      document_rows: {
+        Row: {
+          dataset_id: string | null
+          id: number
+          row_data: Json | null
+        }
+        Insert: {
+          dataset_id?: string | null
+          id?: number
+          row_data?: Json | null
+        }
+        Update: {
+          dataset_id?: string | null
+          id?: number
+          row_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_rows_dataset_id_fkey"
+            columns: ["dataset_id"]
+            isOneToOne: false
+            referencedRelation: "document_metadata"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           content: string | null
