@@ -8,6 +8,7 @@ import CreateDealModal from '@/components/CreateDealModal';
 import DealPipelineHeader from '@/components/deals/DealPipelineHeader';
 import FilterBar from '@/components/deals/FilterBar';
 import StageColumn from '@/components/deals/StageColumn';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -42,7 +43,8 @@ const Deals = () => {
     priorityFilter,
     setPriorityFilter,
     filteredDeals,
-    clearAllFilters
+    clearAllFilters,
+    hasActiveFilters
   } = useDealFilters(deals);
 
   const { totalDeals, totalValue, avgDaysInPipeline } = useDealStats(filteredDeals);
@@ -124,13 +126,20 @@ const Deals = () => {
     return filteredDeals.filter(deal => deal.stage === stageId);
   };
 
+  // Handle keyboard navigation
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Escape' && hasActiveFilters) {
+      clearAllFilters();
+    }
+  };
+
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="h-8 w-32 bg-slate-700 rounded animate-pulse"></div>
-            <div className="h-4 w-64 bg-slate-700 rounded animate-pulse mt-2"></div>
+            <div className="h-8 w-48 bg-slate-700 rounded animate-pulse"></div>
+            <div className="h-4 w-80 bg-slate-700 rounded animate-pulse mt-2"></div>
           </div>
           <div className="h-10 w-32 bg-slate-700 rounded animate-pulse mt-4 sm:mt-0"></div>
         </div>
@@ -145,7 +154,11 @@ const Deals = () => {
   }
 
   return (
-    <div className={`space-y-6 ${isDragging ? 'select-none' : ''}`}>
+    <div 
+      className={`space-y-6 ${isDragging ? 'select-none' : ''} animate-fade-in`}
+      onKeyDown={handleKeyDown}
+      tabIndex={-1}
+    >
       <DealPipelineHeader
         onCreateDeal={() => setIsCreateModalOpen(true)}
         totalDeals={totalDeals}
@@ -163,25 +176,31 @@ const Deals = () => {
         priorityFilter={priorityFilter}
         onPriorityFilterChange={setPriorityFilter}
         onClearAllFilters={clearAllFilters}
+        hasActiveFilters={hasActiveFilters}
         stages={STAGES}
       />
 
-      {/* Kanban Board */}
+      {/* Mobile-responsive Kanban Board */}
       <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        <div className="flex gap-4 overflow-x-auto pb-4">
-          {STAGES.map((stage) => {
-            const stageDeals = getDealsForStage(stage.id);
-            
-            return (
-              <StageColumn
-                key={stage.id}
-                stage={stage}
-                deals={stageDeals}
-                dragLoading={dragLoading}
-              />
-            );
-          })}
-        </div>
+        <ScrollArea className="w-full">
+          <div className="flex gap-4 pb-4 min-w-max">
+            {STAGES.map((stage) => {
+              const stageDeals = getDealsForStage(stage.id);
+              
+              return (
+                <div key={stage.id} className="w-80 sm:w-72 lg:w-80 flex-shrink-0">
+                  <StageColumn
+                    stage={stage}
+                    deals={stageDeals}
+                    dragLoading={dragLoading}
+                    onCreateDeal={() => setIsCreateModalOpen(true)}
+                  />
+                </div>
+              );
+            })}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
       </DragDropContext>
 
       <CreateDealModal 

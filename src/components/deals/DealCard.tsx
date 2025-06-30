@@ -51,7 +51,11 @@ const DealCard = ({ deal, index, isLoading }: DealCardProps) => {
     return (
       <Badge 
         variant="outline" 
-        className={cn("text-xs font-medium", priorityStyles.badgeClass, priorityStyles.pulseClass)}
+        className={cn(
+          "text-xs font-medium transition-all duration-200 hover:scale-105", 
+          priorityStyles.badgeClass, 
+          priorityStyles.pulseClass
+        )}
         title={`Priority Score: ${priorityInfo.score}\nReasons: ${priorityInfo.reasons.join(', ')}`}
       >
         <div className="flex items-center gap-1">
@@ -70,34 +74,48 @@ const DealCard = ({ deal, index, isLoading }: DealCardProps) => {
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           className={cn(
-            "bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-grab group mb-2 relative",
+            "bg-white shadow-sm transition-all duration-300 cursor-grab group mb-3 relative",
+            "hover:shadow-lg hover:scale-[1.02] hover:-translate-y-1",
+            "focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-opacity-50",
             priorityStyles.borderClass,
             priorityStyles.shadowClass,
-            snapshot.isDragging && "rotate-2 shadow-lg scale-105 cursor-grabbing",
+            snapshot.isDragging && "rotate-2 shadow-xl scale-105 cursor-grabbing z-50",
             isLoading && "opacity-70",
             priorityStyles.pulseClass
           )}
+          role="button"
+          tabIndex={0}
+          aria-label={`Deal for ${deal.company_name}, ${formatCurrency(deal.amount_requested)}`}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              // Could trigger deal details modal here
+            }
+          }}
         >
           {isLoading && (
-            <div className="absolute inset-0 bg-white/50 flex items-center justify-center rounded-lg z-10">
-              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center rounded-lg z-10 transition-all duration-300">
+              <div className="flex items-center gap-2 text-blue-600">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span className="text-sm font-medium">Updating...</span>
+              </div>
             </div>
           )}
           
           <CardHeader className="pb-2">
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
-                <h4 className="font-medium text-slate-800 text-sm truncate">
+                <h4 className="font-medium text-slate-800 text-sm truncate transition-colors duration-200 group-hover:text-slate-900">
                   {deal.company_name}
                 </h4>
-                <p className="text-xs text-slate-500 font-mono">
+                <p className="text-xs text-slate-500 font-mono mt-1 transition-colors duration-200 group-hover:text-slate-600">
                   {deal.deal_number}
                 </p>
               </div>
               <div className="flex flex-col items-end gap-1">
                 {getPriorityBadge()}
                 {priorityInfo.level !== 'normal' && (
-                  <div className="text-xs text-slate-400 font-medium">
+                  <div className="text-xs text-slate-400 font-medium transition-colors duration-200 group-hover:text-slate-500">
                     Score: {priorityInfo.score}
                   </div>
                 )}
@@ -105,50 +123,54 @@ const DealCard = ({ deal, index, isLoading }: DealCardProps) => {
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            <div className="space-y-2">
-              <div className="flex items-center gap-1">
-                <DollarSign className="h-3 w-3 text-slate-400" />
-                <span className="text-sm font-medium text-slate-700">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-3 w-3 text-slate-400 transition-colors duration-200 group-hover:text-green-500" />
+                <span className="text-sm font-medium text-slate-700 transition-colors duration-200 group-hover:text-slate-900">
                   {formatCurrency(deal.amount_requested)}
                 </span>
               </div>
-              <div className="flex items-center gap-1">
-                <Calendar className="h-3 w-3 text-slate-400" />
-                <span className="text-xs text-slate-500">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-3 w-3 text-slate-400 transition-colors duration-200 group-hover:text-blue-500" />
+                <span className="text-xs text-slate-500 transition-colors duration-200 group-hover:text-slate-600">
                   {daysInStage} {daysInStage === 1 ? 'day' : 'days'} in stage
                 </span>
               </div>
               
               {/* Priority reasons - visible on hover for non-normal priority */}
               {priorityInfo.level !== 'normal' && priorityInfo.reasons.length > 0 && (
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <div className="text-xs text-slate-600 bg-slate-50 rounded p-1 border">
-                    <div className="font-medium mb-1">Priority Factors:</div>
+                <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                  <div className="text-xs text-slate-600 bg-slate-50 rounded-md p-2 border border-slate-200">
+                    <div className="font-medium mb-1 text-slate-700">Priority Factors:</div>
                     {priorityInfo.reasons.map((reason, idx) => (
-                      <div key={idx} className="text-slate-500">• {reason}</div>
+                      <div key={idx} className="text-slate-500 leading-relaxed">• {reason}</div>
                     ))}
                   </div>
                 </div>
               )}
               
               {deal.contact_name && (
-                <p className="text-xs text-slate-600 truncate font-medium">
+                <p className="text-xs text-slate-600 truncate font-medium transition-colors duration-200 group-hover:text-slate-700">
                   {deal.contact_name}
                 </p>
               )}
               
               {/* Contact info visible on hover */}
-              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 space-y-1">
+              <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 space-y-2">
                 {deal.email && (
-                  <div className="flex items-center gap-1">
-                    <Mail className="h-3 w-3 text-slate-400" />
-                    <span className="text-xs text-slate-500 truncate">{deal.email}</span>
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-3 w-3 text-slate-400 transition-colors duration-200 group-hover:text-blue-500" />
+                    <span className="text-xs text-slate-500 truncate transition-colors duration-200 group-hover:text-slate-600">
+                      {deal.email}
+                    </span>
                   </div>
                 )}
                 {deal.phone && (
-                  <div className="flex items-center gap-1">
-                    <Phone className="h-3 w-3 text-slate-400" />
-                    <span className="text-xs text-slate-500">{deal.phone}</span>
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-3 w-3 text-slate-400 transition-colors duration-200 group-hover:text-green-500" />
+                    <span className="text-xs text-slate-500 transition-colors duration-200 group-hover:text-slate-600">
+                      {deal.phone}
+                    </span>
                   </div>
                 )}
               </div>
