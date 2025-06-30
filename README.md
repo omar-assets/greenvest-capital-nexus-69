@@ -1,73 +1,67 @@
-# Welcome to your Lovable project
+## Project Overview
+Building a Merchant Cash Advance (MCA) CRM system that replicates Dragin.io functionality. The system processes funding applications from email intake through funding completion, with integrated OCR for document processing and automated underwriting capabilities.
 
-## Project info
+## Technical Architecture
+- **Frontend**: Lovable.dev (React + Tailwind CSS)
+- **Backend**: Supabase (PostgreSQL database, Auth, Storage, Edge Functions)
+- **OCR**: MoneyThumb API 1.5 (PDF Insights) integrated directly via Supabase Edge Functions
+- **File Storage**: Supabase Storage for documents
+- **Authentication**: Supabase Auth with email/password
 
-**URL**: https://lovable.dev/projects/82ca0a65-6662-4e09-bce8-7d54ca4d2d50
+## Core Business Workflow
+1. **Email Received** → Application arrives via email with attachments
+2. **Document Processing** → MoneyThumb OCR extracts bank statement data
+3. **Pre-Qualification** → Automated checks based on extracted financials
+4. **Underwriting Review** → Manual review with AI-assisted insights
+5. **Offer Generation** → Create and send funding offers
+6. **Contract Execution** → E-signature and funding
 
-## How can I edit this code?
+## Key Features from Dragin.io
+- **Deal Pipeline**: Kanban board with drag-and-drop between stages
+- **Document Management**: Upload, OCR processing, and data extraction
+- **Automated Scoring**: Bank statement analysis with risk metrics
+- **Offer Calculator**: Dynamic pricing with factor rates and daily payments
+- **Activity Tracking**: Complete audit trail of all deal activities
+- **ISO Portal**: Broker-specific views and commission tracking
 
-There are several ways of editing your application.
+## MoneyThumb API Integration
+- **API Version**: PDF Insights v1.5
+- **Authentication**: Bearer token via header
+- **Key Features**: 
+  - 99% accuracy on bank statements
+  - Fraud detection (Thumbprint scores)
+  - Automatic reconciliation
+  - Financial scorecard generation
+  - Creditworthiness scoring (1-100)
 
-**Use Lovable**
+## Database Design Principles
+- Let Supabase create tables incrementally as features are added
+- Use UUID for all primary keys
+- Implement RLS (Row Level Security) for data access control
+- Store sensitive API keys in Supabase secrets
+- Use JSONB for flexible OCR result storage
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/82ca0a65-6662-4e09-bce8-7d54ca4d2d50) and start prompting.
+## UI/UX Guidelines
+- **Primary Color**: #0066CC (Professional Blue)
+- **Success**: #10B981 (Green) 
+- **Warning**: #F59E0B (Amber)
+- **Danger**: #EF4444 (Red)
+- **Layout**: Card-based with subtle shadows (shadow-sm)
+- **Spacing**: Consistent use of Tailwind spacing (p-4, gap-4)
+- **Components**: Rounded corners (rounded-lg), hover states
+- **Mobile**: Responsive design with mobile-first approach
 
-Changes made via Lovable will be committed automatically to this repo.
+## Security Requirements
+- All API keys stored as Supabase secrets
+- MoneyThumb webhook authentication required
+- File uploads limited to PDF format
+- Maximum file size: 10MB
+- Implement request rate limiting
+- Sanitize all user inputs
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/82ca0a65-6662-4e09-bce8-7d54ca4d2d50) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## Development Approach
+- Build incrementally - one feature at a time
+- Use Chat Mode for debugging
+- Test each feature before moving to next
+- Keep prompts specific and focused
+- Reference this knowledge base in prompts
