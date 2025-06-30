@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -169,7 +168,7 @@ const Dashboard = () => {
                       <span className="text-sm font-medium text-slate-300">
                         {formatCurrency(deal.amount_requested)}
                       </span>
-                      <Badge className={getStatusColor(deal.stage)} size="sm">
+                      <Badge className={getStatusColor(deal.stage)}>
                         {deal.stage}
                       </Badge>
                     </div>
