@@ -1,4 +1,6 @@
 
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Draggable } from 'react-beautiful-dnd';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +18,9 @@ interface DealCardProps {
 }
 
 const DealCard = ({ deal, index, isLoading }: DealCardProps) => {
+  const navigate = useNavigate();
+  const [dragStartPos, setDragStartPos] = useState<{ x: number; y: number } | null>(null);
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -33,6 +38,37 @@ const DealCard = ({ deal, index, isLoading }: DealCardProps) => {
   const priorityInfo = calculatePriorityScore(deal.updated_at, deal.amount_requested, deal.stage);
   const priorityStyles = getPriorityStyles(priorityInfo.level);
   const daysInStage = getDaysInStage(deal.updated_at);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setDragStartPos({ x: e.clientX, y: e.clientY });
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    // If we're in the middle of a drag operation, don't navigate
+    if (dragStartPos) {
+      const distance = Math.sqrt(
+        Math.pow(e.clientX - dragStartPos.x, 2) + Math.pow(e.clientY - dragStartPos.y, 2)
+      );
+      
+      // If mouse moved more than 5 pixels, consider it a drag, not a click
+      if (distance > 5) {
+        setDragStartPos(null);
+        return;
+      }
+    }
+    
+    setDragStartPos(null);
+    navigate(`/deals/${deal.id}`);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      navigate(`/deals/${deal.id}`);
+    }
+  };
 
   const getPriorityIcon = () => {
     switch (priorityInfo.level) {
@@ -74,7 +110,7 @@ const DealCard = ({ deal, index, isLoading }: DealCardProps) => {
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           className={cn(
-            "bg-white shadow-sm transition-all duration-300 cursor-grab group mb-3 relative",
+            "bg-white shadow-sm transition-all duration-300 cursor-pointer group mb-3 relative",
             "hover:shadow-lg hover:scale-[1.02] hover:-translate-y-1",
             "focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-opacity-50",
             priorityStyles.borderClass,
@@ -85,13 +121,10 @@ const DealCard = ({ deal, index, isLoading }: DealCardProps) => {
           )}
           role="button"
           tabIndex={0}
-          aria-label={`Deal for ${deal.company_name}, ${formatCurrency(deal.amount_requested)}`}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              // Could trigger deal details modal here
-            }
-          }}
+          aria-label={`Deal for ${deal.company_name}, ${formatCurrency(deal.amount_requested)}. Click to view details.`}
+          onMouseDown={handleMouseDown}
+          onClick={handleClick}
+          onKeyDown={handleKeyDown}
         >
           {isLoading && (
             <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center rounded-lg z-10 transition-all duration-300">
