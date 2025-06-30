@@ -13,6 +13,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useDeals } from '@/hooks/useDeals';
+import { useCompanies } from '@/hooks/useCompanies';
+import { useContacts } from '@/hooks/useContacts';
 import { useNavigate } from 'react-router-dom';
 
 const createDealSchema = z.object({
@@ -33,6 +35,8 @@ interface CreateDealModalProps {
 const CreateDealModal = ({ open, onOpenChange }: CreateDealModalProps) => {
   const navigate = useNavigate();
   const { createDeal, isCreating } = useDeals();
+  const { findOrCreateCompany } = useCompanies();
+  const { createContact } = useContacts();
   
   const {
     register,
@@ -44,19 +48,39 @@ const CreateDealModal = ({ open, onOpenChange }: CreateDealModalProps) => {
   });
 
   const onSubmit = async (data: CreateDealForm) => {
-    createDeal({
-      company_name: data.company_name,
-      contact_name: data.contact_name || null,
-      email: data.email || null,
-      phone: data.phone || null,
-      amount_requested: data.amount_requested,
-    }, {
-      onSuccess: (newDeal) => {
-        onOpenChange(false);
-        reset();
-        navigate(`/deals/${newDeal.id}`);
-      },
-    });
+    try {
+      // First, find or create the company
+      const company = await findOrCreateCompany(data.company_name);
+      
+      // Create the deal with company_id
+      createDeal({
+        company_name: data.company_name,
+        contact_name: data.contact_name || null,
+        email: data.email || null,
+        phone: data.phone || null,
+        amount_requested: data.amount_requested,
+        company_id: company.id,
+      }, {
+        onSuccess: async (newDeal) => {
+          // If contact information is provided, create a contact record
+          if (data.contact_name) {
+            createContact({
+              company_id: company.id,
+              contact_name: data.contact_name,
+              email: data.email || null,
+              phone: data.phone || null,
+              is_primary: true, // First contact becomes primary
+            });
+          }
+          
+          onOpenChange(false);
+          reset();
+          navigate(`/deals/${newDeal.id}`);
+        },
+      });
+    } catch (error) {
+      console.error('Error creating deal:', error);
+    }
   };
 
   const handleClose = () => {

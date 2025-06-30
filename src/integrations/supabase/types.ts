@@ -9,6 +9,101 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      companies: {
+        Row: {
+          address_line1: string | null
+          address_line2: string | null
+          city: string | null
+          company_name: string
+          created_at: string
+          dba_name: string | null
+          id: string
+          industry: string | null
+          state: string | null
+          updated_at: string
+          user_id: string
+          years_in_business: number | null
+          zip_code: string | null
+        }
+        Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          company_name: string
+          created_at?: string
+          dba_name?: string | null
+          id?: string
+          industry?: string | null
+          state?: string | null
+          updated_at?: string
+          user_id: string
+          years_in_business?: number | null
+          zip_code?: string | null
+        }
+        Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          company_name?: string
+          created_at?: string
+          dba_name?: string | null
+          id?: string
+          industry?: string | null
+          state?: string | null
+          updated_at?: string
+          user_id?: string
+          years_in_business?: number | null
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
+      contacts: {
+        Row: {
+          company_id: string
+          contact_name: string
+          created_at: string
+          email: string | null
+          id: string
+          is_primary: boolean
+          phone: string | null
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          contact_name: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_primary?: boolean
+          phone?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          contact_name?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_primary?: boolean
+          phone?: string | null
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_audit_log: {
         Row: {
           action: string
@@ -50,6 +145,7 @@ export type Database = {
       deals: {
         Row: {
           amount_requested: number
+          company_id: string | null
           company_name: string
           contact_name: string | null
           created_at: string
@@ -64,6 +160,7 @@ export type Database = {
         }
         Insert: {
           amount_requested: number
+          company_id?: string | null
           company_name: string
           contact_name?: string | null
           created_at?: string
@@ -78,6 +175,7 @@ export type Database = {
         }
         Update: {
           amount_requested?: number
+          company_id?: string | null
           company_name?: string
           contact_name?: string | null
           created_at?: string
@@ -90,7 +188,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "deals_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
