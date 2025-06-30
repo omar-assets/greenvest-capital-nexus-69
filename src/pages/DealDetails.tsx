@@ -3,20 +3,25 @@ import { ArrowLeft } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDeal } from '@/hooks/useDeals';
 import { useDealDocuments } from '@/hooks/useDealDocuments';
+import { useTabNavigation } from '@/hooks/useTabNavigation';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import DealHeader from '@/components/deals/DealHeader';
 import StageProgressIndicator from '@/components/deals/StageProgressIndicator';
 import DealOverviewTab from '@/components/deals/DealOverviewTab';
 import ActivityTimeline from '@/components/deals/ActivityTimeline';
 import DealActionButtons from '@/components/deals/DealActionButtons';
-import DocumentDropzone from '@/components/deals/DocumentDropzone';
+import DocumentDropzone, { DocumentDropzoneRef } from '@/components/deals/DocumentDropzone';
 import DocumentGrid from '@/components/deals/DocumentGrid';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { useRef } from 'react';
 
 const DealDetails = () => {
   const { id } = useParams<{ id: string }>();
   const { toast } = useToast();
+  const dropzoneRef = useRef<DocumentDropzoneRef>(null);
+  const { activeTab, setActiveTab, switchToTab } = useTabNavigation('overview');
+  
   const { data: deal, isLoading, error } = useDeal(id!);
   const { 
     documents, 
@@ -110,6 +115,35 @@ const DealDetails = () => {
     });
   };
 
+  const handleUploadDocument = () => {
+    switchToTab('documents');
+    // Small delay to ensure tab is switched before triggering file select
+    setTimeout(() => {
+      dropzoneRef.current?.triggerFileSelect();
+    }, 100);
+  };
+
+  const handleAddNote = () => {
+    toast({
+      title: "Add Note",
+      description: "Note functionality will be implemented in the next phase.",
+    });
+  };
+
+  const handleChangeStage = () => {
+    toast({
+      title: "Change Stage",
+      description: "Stage change functionality will be implemented in the next phase.",
+    });
+  };
+
+  const handleGenerateOffer = () => {
+    toast({
+      title: "Generate Offer",
+      description: "Offer generation will be implemented in the next phase.",
+    });
+  };
+
   return (
     <ErrorBoundary>
       <div className="space-y-6">
@@ -134,7 +168,7 @@ const DealDetails = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content Area */}
           <div className="lg:col-span-2">
-            <Tabs defaultValue="overview" className="space-y-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
               <TabsList className="bg-slate-800 border-slate-700">
                 <TabsTrigger value="overview" className="data-[state=active]:bg-slate-700">
                   Overview
@@ -161,6 +195,7 @@ const DealDetails = () => {
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <DocumentDropzone 
+                      ref={dropzoneRef}
                       onUpload={uploadDocument}
                       isUploading={isUploading}
                     />
@@ -203,7 +238,12 @@ const DealDetails = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            <DealActionButtons />
+            <DealActionButtons 
+              onUploadDocument={handleUploadDocument}
+              onAddNote={handleAddNote}
+              onChangeStage={handleChangeStage}
+              onGenerateOffer={handleGenerateOffer}
+            />
             <ActivityTimeline deal={deal} />
           </div>
         </div>

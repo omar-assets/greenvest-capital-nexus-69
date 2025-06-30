@@ -21,26 +21,26 @@ interface DocumentGridProps {
 const getCategoryColor = (category: string) => {
   switch (category) {
     case 'Bank Statement':
-      return 'bg-blue-100 text-blue-800';
+      return 'bg-blue-900/50 text-blue-300 border-blue-700';
     case 'Tax Return':
-      return 'bg-green-100 text-green-800';
+      return 'bg-green-900/50 text-green-300 border-green-700';
     case 'Driver License':
-      return 'bg-purple-100 text-purple-800';
+      return 'bg-purple-900/50 text-purple-300 border-purple-700';
     default:
-      return 'bg-gray-100 text-gray-800';
+      return 'bg-slate-700 text-slate-300 border-slate-600';
   }
 };
 
 const getStatusColor = (status: string | null) => {
   switch (status) {
     case 'completed':
-      return 'bg-green-100 text-green-800';
+      return 'bg-green-900/50 text-green-300 border-green-700';
     case 'processing':
-      return 'bg-yellow-100 text-yellow-800';
+      return 'bg-yellow-900/50 text-yellow-300 border-yellow-700';
     case 'failed':
-      return 'bg-red-100 text-red-800';
+      return 'bg-red-900/50 text-red-300 border-red-700';
     case 'pending':
-      return 'bg-blue-100 text-blue-800';
+      return 'bg-blue-900/50 text-blue-300 border-blue-700';
     default:
       return null;
   }
@@ -57,9 +57,9 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
   if (documents.length === 0) {
     return (
       <div className="text-center py-12">
-        <FileText className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No documents uploaded</h3>
-        <p className="text-gray-500">Upload PDF documents to get started</p>
+        <FileText className="h-12 w-12 mx-auto text-slate-500 mb-4" />
+        <h3 className="text-lg font-medium text-slate-300 mb-2">No documents uploaded</h3>
+        <p className="text-slate-500">Upload PDF documents to get started</p>
       </div>
     );
   }
@@ -67,15 +67,15 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {documents.map((document) => (
-        <Card key={document.id} className="hover:shadow-md transition-shadow">
+        <Card key={document.id} className="bg-slate-800 border-slate-700 hover:border-slate-600 transition-colors">
           <CardContent className="p-4">
             <div className="flex items-start gap-3 mb-3">
-              <FileText className="h-8 w-8 text-red-600 flex-shrink-0 mt-1" />
+              <FileText className="h-8 w-8 text-red-400 flex-shrink-0 mt-1" />
               <div className="flex-1 min-w-0">
-                <h4 className="font-medium truncate" title={document.original_filename}>
+                <h4 className="font-medium truncate text-slate-200" title={document.original_filename}>
                   {document.original_filename}
                 </h4>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-slate-400">
                   {(Number(document.file_size) / 1024 / 1024).toFixed(2)} MB
                 </p>
               </div>
@@ -93,7 +93,7 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
               )}
             </div>
 
-            <div className="text-xs text-gray-500 mb-4">
+            <div className="text-xs text-slate-500 mb-4">
               <p>Uploaded: {formatDate(document.created_at)}</p>
               {document.updated_at !== document.created_at && (
                 <p>Updated: {formatDate(document.updated_at)}</p>
@@ -105,7 +105,7 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => onView(document)}
-                className="flex-1"
+                className="flex-1 border-slate-600 text-slate-200 hover:bg-slate-700"
               >
                 <Eye className="h-3 w-3 mr-1" />
                 View
@@ -115,6 +115,7 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={() => onDownload(document)}
+                className="border-slate-600 text-slate-200 hover:bg-slate-700"
               >
                 <Download className="h-3 w-3" />
               </Button>
@@ -125,6 +126,7 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
                   size="sm"
                   onClick={() => onProcessOCR(document.id)}
                   title="Process with OCR"
+                  className="border-slate-600 text-slate-200 hover:bg-slate-700"
                 >
                   <Zap className="h-3 w-3" />
                 </Button>
@@ -135,7 +137,7 @@ const DocumentGrid: React.FC<DocumentGridProps> = ({
                 size="sm"
                 onClick={() => onDelete(document.id)}
                 disabled={isDeleting}
-                className="text-red-600 hover:text-red-700"
+                className="text-red-400 hover:text-red-300 border-slate-600 hover:bg-slate-700"
               >
                 <Trash2 className="h-3 w-3" />
               </Button>
