@@ -8,6 +8,14 @@ import type { Database } from '@/integrations/supabase/types';
 type DealActivity = Database['public']['Tables']['deal_activities']['Row'];
 type DealActivityInsert = Database['public']['Tables']['deal_activities']['Insert'];
 
+// Define the extended type for activities with profile info
+type ActivityWithProfile = DealActivity & {
+  profiles: {
+    full_name: string | null;
+    email: string | null;
+  } | null;
+};
+
 export interface ActivityFilter {
   type?: 'all' | 'auto' | 'manual';
   category?: string;
@@ -56,8 +64,13 @@ export const useDealActivities = (dealId: string, filter?: ActivityFilter) => {
       }
 
       const { data, error } = await query;
-      if (error) throw error;
-      return data as (DealActivity & { profiles: { full_name: string; email: string } })[];
+      if (error) {
+        console.error('Error fetching activities:', error);
+        throw error;
+      }
+      
+      // Return the data as-is, let TypeScript handle the type inference
+      return (data || []) as ActivityWithProfile[];
     },
     enabled: !!user?.id && !!dealId,
   });

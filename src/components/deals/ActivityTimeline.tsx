@@ -173,7 +173,7 @@ const ActivityTimeline = ({ dealId }: ActivityTimelineProps) => {
           ) : (
             <div className="space-y-4">
               {activities.map((activity, index) => {
-                const { timeAgo, fullDate } = formatTimestamp(activity.created_at);
+                const { timeAgo, fullDate } = formatTimestamp(activity.created_at || '');
                 const userName = activity.profiles?.full_name || 'Unknown User';
                 
                 return (
