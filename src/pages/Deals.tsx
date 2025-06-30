@@ -10,6 +10,7 @@ import FilterBar from '@/components/deals/FilterBar';
 import StageColumn from '@/components/deals/StageColumn';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 const STAGES = [
   { id: 'New', title: 'New', color: 'bg-blue-50 border-blue-200' },
@@ -22,8 +23,10 @@ const STAGES = [
 
 const Deals = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const { deals = [], isLoading } = useDeals();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const {
     filter,
@@ -46,6 +49,9 @@ const Deals = () => {
 
       if (error) throw error;
 
+      // Invalidate and refetch deals data
+      await queryClient.invalidateQueries({ queryKey: ['deals'] });
+
       toast({
         title: "Deal Updated",
         description: `Deal moved to ${newStage}`,
@@ -54,13 +60,22 @@ const Deals = () => {
       console.error('Error updating deal stage:', error);
       toast({
         title: "Error",
-        description: "Failed to update deal stage",
+        description: "Failed to update deal stage. Please try again.",
         variant: "destructive",
       });
+      
+      // Refetch data to revert any optimistic updates
+      queryClient.invalidateQueries({ queryKey: ['deals'] });
     }
   };
 
+  const handleDragStart = () => {
+    setIsDragging(true);
+  };
+
   const handleDragEnd = (result: DropResult) => {
+    setIsDragging(false);
+    
     if (!result.destination) return;
 
     const { source, destination, draggableId } = result;
@@ -96,7 +111,7 @@ const Deals = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${isDragging ? 'select-none' : ''}`}>
       <DealPipelineHeader
         onCreateDeal={() => setIsCreateModalOpen(true)}
         totalDeals={totalDeals}
@@ -112,8 +127,8 @@ const Deals = () => {
       />
 
       {/* Kanban Board */}
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <div className="flex gap-4 overflow-x-auto pb-4">
           {STAGES.map((stage) => {
             const stageDeals = getDealsForStage(stage.id);
             

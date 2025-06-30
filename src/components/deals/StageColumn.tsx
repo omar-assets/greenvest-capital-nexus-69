@@ -30,8 +30,34 @@ const StageColumn = ({ stage, deals }: StageColumnProps) => {
     }).format(amount);
   };
 
+  // Sort deals by priority and then by days in stage
+  const sortedDeals = [...deals].sort((a, b) => {
+    const getDaysInStage = (updatedAt: string) => {
+      return Math.floor((Date.now() - new Date(updatedAt).getTime()) / (1000 * 60 * 60 * 24));
+    };
+
+    const getPriorityScore = (deal: Deal) => {
+      const daysInStage = getDaysInStage(deal.updated_at);
+      const amount = deal.amount_requested;
+      
+      if (daysInStage > 10 || amount > 150000) return 3; // urgent
+      if (daysInStage > 5 || amount > 75000) return 2; // high
+      return 1; // normal
+    };
+
+    const priorityA = getPriorityScore(a);
+    const priorityB = getPriorityScore(b);
+    
+    if (priorityA !== priorityB) {
+      return priorityB - priorityA; // Higher priority first
+    }
+    
+    // If same priority, sort by days in stage (longer first)
+    return getDaysInStage(b.updated_at) - getDaysInStage(a.updated_at);
+  });
+
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-w-[280px]">
       <div className={cn("rounded-t-lg p-3 border-b", stage.color)}>
         <div className="flex items-center justify-between mb-1">
           <h3 className="font-semibold text-slate-700 text-sm">{stage.title}</h3>
@@ -52,17 +78,15 @@ const StageColumn = ({ stage, deals }: StageColumnProps) => {
             ref={provided.innerRef}
             {...provided.droppableProps}
             className={cn(
-              "flex-1 p-2 space-y-2 min-h-[500px] bg-slate-50 rounded-b-lg border-l border-r border-b transition-colors",
+              "flex-1 p-2 min-h-[500px] max-h-[600px] overflow-y-auto bg-slate-50 rounded-b-lg border-l border-r border-b transition-colors",
               snapshot.isDraggingOver && "bg-blue-50 border-blue-200"
             )}
           >
-            {deals.map((deal, index) => (
+            {sortedDeals.map((deal, index) => (
               <DealCard
                 key={deal.id}
                 deal={deal}
                 index={index}
-                provided={provided}
-                snapshot={snapshot}
               />
             ))}
             {provided.placeholder}
