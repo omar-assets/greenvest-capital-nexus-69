@@ -221,10 +221,7 @@ const DealDetails = () => {
               </TabsContent>
 
               <TabsContent value="activities">
-                <div className="bg-slate-800 border-slate-700 rounded-lg p-6">
-                  <h3 className="text-lg font-medium text-slate-200 mb-4">Activities</h3>
-                  <p className="text-slate-400">Detailed activity log will be implemented in the next phase.</p>
-                </div>
+                <ActivityTimeline dealId={id!} />
               </TabsContent>
 
               <TabsContent value="offers">
@@ -244,7 +241,7 @@ const DealDetails = () => {
               onChangeStage={handleChangeStage}
               onGenerateOffer={handleGenerateOffer}
             />
-            <ActivityTimeline deal={deal} />
+            <ActivityTimeline dealId={id!} />
           </div>
         </div>
       </div>

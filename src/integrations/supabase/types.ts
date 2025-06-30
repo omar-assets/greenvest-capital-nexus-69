@@ -104,6 +104,53 @@ export type Database = {
           },
         ]
       }
+      deal_activities: {
+        Row: {
+          activity_type: string
+          category: string
+          created_at: string | null
+          deal_id: string
+          description: string | null
+          id: string
+          mentioned_users: string[] | null
+          metadata: Json | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          category: string
+          created_at?: string | null
+          deal_id: string
+          description?: string | null
+          id?: string
+          mentioned_users?: string[] | null
+          metadata?: Json | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          category?: string
+          created_at?: string | null
+          deal_id?: string
+          description?: string | null
+          id?: string
+          mentioned_users?: string[] | null
+          metadata?: Json | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_activities_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_audit_log: {
         Row: {
           action: string
