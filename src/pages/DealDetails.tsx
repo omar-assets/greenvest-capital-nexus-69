@@ -47,14 +47,16 @@ const DealDetails = () => {
 
   if (isDealsLoading || isCompaniesLoading) {
     return (
-      <div className="space-y-6 animate-fade-in">
-        <div className="flex items-center space-x-4">
-          <div className="h-8 w-32 bg-slate-200 rounded animate-pulse"></div>
-          <div className="h-6 w-48 bg-slate-200 rounded animate-pulse"></div>
-        </div>
-        <div className="space-y-4">
-          <div className="h-40 bg-slate-100 rounded-lg animate-pulse"></div>
-          <div className="h-40 bg-slate-100 rounded-lg animate-pulse"></div>
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto space-y-6 animate-fade-in">
+          <div className="flex items-center space-x-4">
+            <div className="h-8 w-32 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-6 w-48 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+          <div className="space-y-4">
+            <div className="h-40 bg-white rounded-lg shadow-sm animate-pulse"></div>
+            <div className="h-40 bg-white rounded-lg shadow-sm animate-pulse"></div>
+          </div>
         </div>
       </div>
     );
@@ -62,91 +64,119 @@ const DealDetails = () => {
 
   if (!deal) {
     return (
-      <div className="text-center py-12">
-        <h2 className="text-xl font-semibold text-gray-700 mb-4">Deal Not Found</h2>
-        <p className="text-gray-500">The requested deal could not be found.</p>
-        <button onClick={() => navigate('/deals')} className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300">
-          Back to Deals
-        </button>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center py-12">
+          <h2 className="text-xl font-semibold text-gray-700 mb-4">Deal Not Found</h2>
+          <p className="text-gray-500 mb-6">The requested deal could not be found.</p>
+          <button 
+            onClick={() => navigate('/deals')} 
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+          >
+            Back to Deals
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto px-4">
-      {/* Header */}
-      <DealHeader 
-        deal={deal} 
-        onBack={() => navigate('/deals')}
-        onEdit={() => setIsEditing(true)}
-        actions={
-          <GenerateScorecardButton
-            company_id={deal.company_id || ''}
-            deal_id={deal.id}
-            external_app_id={companyData?.external_app_id || undefined}
-            disabled={!companyData?.external_app_id}
-          />
-        }
-      />
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto p-6 space-y-8">
+        {/* Header */}
+        <DealHeader 
+          deal={deal} 
+          onBack={() => navigate('/deals')}
+          onEdit={() => setIsEditing(true)}
+          actions={
+            <GenerateScorecardButton
+              company_id={deal.company_id || ''}
+              deal_id={deal.id}
+              external_app_id={companyData?.external_app_id || undefined}
+              disabled={!companyData?.external_app_id}
+            />
+          }
+        />
 
-      {/* Tabs */}
-      <Tabs defaultValue="activities" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="activities">Activities</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="offers">Offers</TabsTrigger>
-          <TabsTrigger value="notes">Notes</TabsTrigger>
-        </TabsList>
-        <TabsContent value="activities" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span>Deal Activities</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <DealActivities dealId={deal.id} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="documents" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Deal Documents</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <DealDocuments dealId={deal.id} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="offers" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Deal Offers</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <DealOffers dealId={deal.id} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="notes" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Deal Notes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <DealNotes dealId={deal.id} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+        {/* Main Content */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <Tabs defaultValue="activities" className="w-full">
+            <div className="border-b border-gray-200 bg-gray-50 px-6">
+              <TabsList className="bg-transparent p-0 h-auto">
+                <TabsTrigger 
+                  value="activities" 
+                  className="data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:shadow-none rounded-none px-6 py-4 font-medium text-gray-600 data-[state=active]:text-blue-600"
+                >
+                  Activities
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="documents"
+                  className="data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:shadow-none rounded-none px-6 py-4 font-medium text-gray-600 data-[state=active]:text-blue-600"
+                >
+                  Documents
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="offers"
+                  className="data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:shadow-none rounded-none px-6 py-4 font-medium text-gray-600 data-[state=active]:text-blue-600"
+                >
+                  Offers
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="notes"
+                  className="data-[state=active]:bg-white data-[state=active]:border-b-2 data-[state=active]:border-blue-500 data-[state=active]:shadow-none rounded-none px-6 py-4 font-medium text-gray-600 data-[state=active]:text-blue-600"
+                >
+                  Notes
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-      {/* Edit Deal Modal */}
-      <EditDealModal
-        open={isEditing}
-        onOpenChange={setIsEditing}
-        deal={deal}
-      />
+            <div className="p-6">
+              <TabsContent value="activities" className="mt-0">
+                <DealActivities dealId={deal.id} />
+              </TabsContent>
+              
+              <TabsContent value="documents" className="mt-0">
+                <Card className="bg-white border border-gray-200 shadow-sm">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-gray-900 text-lg font-semibold">Deal Documents</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <DealDocuments dealId={deal.id} />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="offers" className="mt-0">
+                <Card className="bg-white border border-gray-200 shadow-sm">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-gray-900 text-lg font-semibold">Deal Offers</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <DealOffers dealId={deal.id} />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              
+              <TabsContent value="notes" className="mt-0">
+                <Card className="bg-white border border-gray-200 shadow-sm">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-gray-900 text-lg font-semibold">Deal Notes</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <DealNotes dealId={deal.id} />
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </div>
+          </Tabs>
+        </div>
+
+        {/* Edit Deal Modal */}
+        <EditDealModal
+          open={isEditing}
+          onOpenChange={setIsEditing}
+          deal={deal}
+        />
+      </div>
     </div>
   );
 };
