@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
@@ -18,10 +19,34 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<Index />} />
-      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/deals" element={<ProtectedRoute><Deals /></ProtectedRoute>} />
-      <Route path="/deals/:id" element={<ProtectedRoute><DealDetails /></ProtectedRoute>} />
-      <Route path="/companies" element={<ProtectedRoute><Companies /></ProtectedRoute>} />
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <Layout>
+            <Dashboard />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/deals" element={
+        <ProtectedRoute>
+          <Layout>
+            <Deals />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/deals/:id" element={
+        <ProtectedRoute>
+          <Layout>
+            <DealDetails />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/companies" element={
+        <ProtectedRoute>
+          <Layout>
+            <Companies />
+          </Layout>
+        </ProtectedRoute>
+      } />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
