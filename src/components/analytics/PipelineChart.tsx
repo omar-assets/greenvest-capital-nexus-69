@@ -28,10 +28,10 @@ export function PipelineChart({ data }: PipelineChartProps) {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-slate-800 border border-slate-600 rounded-lg p-3 shadow-lg">
-          <p className="text-slate-200 font-medium mb-2">{`Stage: ${label}`}</p>
+        <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
+          <p className="text-card-foreground font-medium mb-2">{`Stage: ${label}`}</p>
           {payload.map((entry: any, index: number) => (
-            <p key={index} className="text-slate-300 text-sm">
+            <p key={index} className="text-card-foreground text-sm">
               <span style={{ color: entry.color }}>●</span>
               {` ${entry.name}: ${
                 entry.dataKey === 'value' 
@@ -52,14 +52,14 @@ export function PipelineChart({ data }: PipelineChartProps) {
         <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
           <XAxis 
             dataKey="stage" 
-            className="text-slate-400"
+            className="text-muted-foreground"
             angle={-45}
             textAnchor="end"
             height={80}
             interval={0}
           />
-          <YAxis yAxisId="left" className="text-slate-400" />
-          <YAxis yAxisId="right" orientation="right" className="text-slate-400" />
+          <YAxis yAxisId="left" className="text-muted-foreground" />
+          <YAxis yAxisId="right" orientation="right" className="text-muted-foreground" />
           <Tooltip content={<CustomTooltip />} />
           <Legend />
           <Bar 

@@ -29,14 +29,14 @@ const DealPipelineHeader = ({
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-200">Deal Pipeline</h1>
-          <p className="text-slate-400 mt-1">
+          <h1 className="text-2xl font-bold text-foreground">Deal Pipeline</h1>
+          <p className="text-muted-foreground mt-1">
             Manage your MCA funding applications through the pipeline.
           </p>
         </div>
         <Button 
           onClick={onCreateDeal}
-          className="mt-4 sm:mt-0 bg-blue-600 hover:bg-blue-700"
+          className="mt-4 sm:mt-0 bg-primary hover:bg-primary/90 text-primary-foreground"
         >
           <Plus className="h-4 w-4 mr-2" />
           New Deal
@@ -45,37 +45,37 @@ const DealPipelineHeader = ({
 
       {/* Pipeline Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="bg-slate-800 border-slate-700">
+        <Card className="bg-card border-border">
           <CardContent className="p-4">
             <div className="flex items-center">
               <TrendingUp className="h-8 w-8 text-blue-500" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-slate-400">Total Deals</p>
-                <p className="text-2xl font-bold text-slate-200">{totalDeals}</p>
+                <p className="text-sm font-medium text-muted-foreground">Total Deals</p>
+                <p className="text-2xl font-bold text-card-foreground">{totalDeals}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800 border-slate-700">
+        <Card className="bg-card border-border">
           <CardContent className="p-4">
             <div className="flex items-center">
               <DollarSign className="h-8 w-8 text-green-500" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-slate-400">Pipeline Value</p>
-                <p className="text-2xl font-bold text-slate-200">{formatCurrency(totalValue)}</p>
+                <p className="text-sm font-medium text-muted-foreground">Pipeline Value</p>
+                <p className="text-2xl font-bold text-card-foreground">{formatCurrency(totalValue)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-slate-800 border-slate-700">
+        <Card className="bg-card border-border">
           <CardContent className="p-4">
             <div className="flex items-center">
               <Calendar className="h-8 w-8 text-orange-500" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-slate-400">Avg. Days in Pipeline</p>
-                <p className="text-2xl font-bold text-slate-200">{avgDaysInPipeline}</p>
+                <p className="text-sm font-medium text-muted-foreground">Avg. Days in Pipeline</p>
+                <p className="text-2xl font-bold text-card-foreground">{avgDaysInPipeline}</p>
               </div>
             </div>
           </CardContent>
