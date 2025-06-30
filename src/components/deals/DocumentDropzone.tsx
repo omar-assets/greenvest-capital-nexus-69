@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Card, CardContent } from '@/components/ui/card';
 
 interface DocumentDropzoneProps {
-  onUpload: (file: File, category: string) => void;
+  onUpload: (params: { file: File; category: string; onProgress?: (progress: number) => void }) => void;
   isUploading: boolean;
 }
 
@@ -60,7 +60,15 @@ const DocumentDropzone: React.FC<DocumentDropzoneProps> = ({ onUpload, isUploadi
     const fileData = filesToUpload[index];
     if (fileData.category === '') return;
     
-    onUpload(fileData.file, fileData.category);
+    onUpload({ 
+      file: fileData.file, 
+      category: fileData.category,
+      onProgress: (progress) => {
+        setFilesToUpload(prev => prev.map((item, i) => 
+          i === index ? { ...item, progress } : item
+        ));
+      }
+    });
     removeFile(index);
   };
 
@@ -68,7 +76,15 @@ const DocumentDropzone: React.FC<DocumentDropzoneProps> = ({ onUpload, isUploadi
     filesToUpload.forEach((fileData, index) => {
       if (fileData.category !== '') {
         setTimeout(() => {
-          onUpload(fileData.file, fileData.category);
+          onUpload({ 
+            file: fileData.file, 
+            category: fileData.category,
+            onProgress: (progress) => {
+              setFilesToUpload(prev => prev.map((item, i) => 
+                i === index ? { ...item, progress } : item
+              ));
+            }
+          });
         }, index * 500); // Stagger uploads
       }
     });
