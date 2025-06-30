@@ -17,13 +17,13 @@ const DealActionButtons: React.FC<DealActionButtonsProps> = ({
   onGenerateOffer
 }) => {
   return (
-    <Card className="bg-slate-800 border-slate-700">
-      <CardHeader>
-        <CardTitle className="text-slate-200">Quick Actions</CardTitle>
+    <Card className="bg-slate-50 border-slate-200 shadow-sm">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-slate-800 text-sm font-semibold">Quick Actions</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-2">
         <Button 
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white text-sm py-2 h-auto"
           onClick={onUploadDocument}
         >
           <Upload className="h-4 w-4 mr-2" />
@@ -31,7 +31,7 @@ const DealActionButtons: React.FC<DealActionButtonsProps> = ({
         </Button>
         <Button 
           variant="outline" 
-          className="w-full border-slate-600 text-slate-200 hover:bg-slate-700"
+          className="w-full border-slate-300 text-slate-700 hover:bg-slate-100 text-sm py-2 h-auto"
           onClick={onAddNote}
         >
           <FileText className="h-4 w-4 mr-2" />
@@ -39,7 +39,7 @@ const DealActionButtons: React.FC<DealActionButtonsProps> = ({
         </Button>
         <Button 
           variant="outline" 
-          className="w-full border-slate-600 text-slate-200 hover:bg-slate-700"
+          className="w-full border-slate-300 text-slate-700 hover:bg-slate-100 text-sm py-2 h-auto"
           onClick={onChangeStage}
         >
           <RefreshCw className="h-4 w-4 mr-2" />
@@ -47,7 +47,7 @@ const DealActionButtons: React.FC<DealActionButtonsProps> = ({
         </Button>
         <Button 
           variant="outline" 
-          className="w-full border-slate-600 text-slate-200 hover:bg-slate-700"
+          className="w-full border-slate-300 text-slate-700 hover:bg-slate-100 text-sm py-2 h-auto"
           onClick={onGenerateOffer}
         >
           <DollarSign className="h-4 w-4 mr-2" />

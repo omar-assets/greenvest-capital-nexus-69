@@ -39,7 +39,7 @@ const DealHeader = ({ deal, onBack, onEdit, actions }: DealHeaderProps) => {
   return (
     <div className="bg-white rounded-lg border shadow-sm p-6 space-y-4 animate-fade-in">
       {/* Header Row */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
           <Button variant="outline" size="sm" onClick={onBack}>
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -50,21 +50,25 @@ const DealHeader = ({ deal, onBack, onEdit, actions }: DealHeaderProps) => {
               {deal.deal_number}
               <StageProgressIndicator currentStage={deal.stage} />
             </h1>
-            <p className="text-muted-foreground">{deal.company_name}</p>
+            <p className="text-muted-foreground mt-1">{deal.company_name}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {actions}
-          <Button variant="outline" onClick={onEdit}>
-            <Edit className="h-4 w-4 mr-2" />
-            Edit Deal
-          </Button>
-          <DealActionButtons />
+        <div className="flex items-start gap-4">
+          <div className="flex items-center gap-2">
+            {actions}
+            <Button variant="outline" onClick={onEdit}>
+              <Edit className="h-4 w-4 mr-2" />
+              Edit Deal
+            </Button>
+          </div>
+          <div className="w-64">
+            <DealActionButtons />
+          </div>
         </div>
       </div>
 
       {/* Deal Info Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4 border-t border-gray-100">
         <div className="space-y-2">
           <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Company</h3>
           <p className="text-lg font-semibold text-foreground">{deal.company_name}</p>

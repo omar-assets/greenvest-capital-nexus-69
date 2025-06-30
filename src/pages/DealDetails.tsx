@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,7 +15,6 @@ import DealOffers from '@/components/deals/DealOffers';
 import DealNotes from '@/components/deals/DealNotes';
 import DealHeader from '@/components/deals/DealHeader';
 import StageProgressIndicator from '@/components/deals/StageProgressIndicator';
-import DealActionButtons from '@/components/deals/DealActionButtons';
 import GenerateScorecardButton from '@/components/GenerateScorecardButton';
 import type { Database as DatabaseType } from '@/integrations/supabase/types';
 
@@ -73,7 +73,7 @@ const DealDetails = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto px-4">
       {/* Header */}
       <DealHeader 
         deal={deal} 
@@ -91,23 +91,25 @@ const DealDetails = () => {
 
       {/* Tabs */}
       <Tabs defaultValue="activities" className="space-y-4">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="activities">Activities</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="offers">Offers</TabsTrigger>
           <TabsTrigger value="notes">Notes</TabsTrigger>
         </TabsList>
-        <TabsContent value="activities">
+        <TabsContent value="activities" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Deal Activities</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <span>Deal Activities</span>
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <DealActivities dealId={deal.id} />
             </CardContent>
           </Card>
         </TabsContent>
-        <TabsContent value="documents">
+        <TabsContent value="documents" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Deal Documents</CardTitle>
@@ -117,7 +119,7 @@ const DealDetails = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        <TabsContent value="offers">
+        <TabsContent value="offers" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Deal Offers</CardTitle>
@@ -127,7 +129,7 @@ const DealDetails = () => {
             </CardContent>
           </Card>
         </TabsContent>
-        <TabsContent value="notes">
+        <TabsContent value="notes" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Deal Notes</CardTitle>
