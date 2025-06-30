@@ -17,11 +17,11 @@ interface FundingTrendsChartProps {
 const chartConfig = {
   deals: {
     label: "Deals Funded",
-    color: "#3b82f6"
+    color: "hsl(var(--primary))"
   },
   amount: {
     label: "Amount Funded",
-    color: "#10b981"
+    color: "hsl(221.2 83.2% 53.3%)"
   }
 };
 
@@ -29,12 +29,12 @@ export function FundingTrendsChart({ data }: FundingTrendsChartProps) {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-slate-800 border border-slate-600 rounded-lg p-3 shadow-lg">
-          <p className="text-slate-200 font-medium mb-2">
+        <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
+          <p className="text-card-foreground font-medium mb-2">
             {format(new Date(label), 'MMM dd, yyyy')}
           </p>
           {payload.map((entry: any, index: number) => (
-            <p key={index} className="text-slate-300 text-sm">
+            <p key={index} className="text-card-foreground text-sm">
               <span style={{ color: entry.color }}>●</span>
               {` ${entry.name}: ${
                 entry.dataKey === 'amount' 
@@ -55,11 +55,11 @@ export function FundingTrendsChart({ data }: FundingTrendsChartProps) {
         <LineChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
           <XAxis 
             dataKey="date"
-            className="text-slate-400"
+            className="text-muted-foreground"
             tickFormatter={(value) => format(new Date(value), 'MMM dd')}
           />
-          <YAxis yAxisId="left" className="text-slate-400" />
-          <YAxis yAxisId="right" orientation="right" className="text-slate-400" />
+          <YAxis yAxisId="left" className="text-muted-foreground" />
+          <YAxis yAxisId="right" orientation="right" className="text-muted-foreground" />
           <Tooltip content={<CustomTooltip />} />
           <Legend />
           <Line 

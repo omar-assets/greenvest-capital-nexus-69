@@ -21,28 +21,28 @@ export function KPICards({ data }: KPICardsProps) {
       value: formatCurrency(data.totalPipelineValue),
       icon: DollarSign,
       description: 'Total value of active deals',
-      color: 'text-green-400'
+      color: 'text-green-600'
     },
     {
       title: 'Deals Funded This Month',
       value: formatCurrency(data.dealsFundedThisMonth),
       icon: ChartBar,
       description: 'Revenue from closed deals',
-      color: 'text-blue-400'
+      color: 'text-blue-600'
     },
     {
       title: 'Average Deal Size',
       value: formatCurrency(data.averageDealSize),
       icon: ChartLine,
       description: 'Mean deal amount',
-      color: 'text-purple-400'
+      color: 'text-purple-600'
     },
     {
       title: 'Conversion Rate',
       value: `${data.conversionRate}%`,
       icon: Filter,
       description: 'Deals closed vs total',
-      color: 'text-orange-400'
+      color: 'text-orange-600'
     }
   ];
 
@@ -51,7 +51,7 @@ export function KPICards({ data }: KPICardsProps) {
       {kpis.map((kpi) => {
         const Icon = kpi.icon;
         return (
-          <Card key={kpi.title} className="bg-card border-border hover:bg-card/80 transition-colors">
+          <Card key={kpi.title} className="bg-card border-border shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-card-foreground">
                 {kpi.title}

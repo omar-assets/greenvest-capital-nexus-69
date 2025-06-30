@@ -16,11 +16,11 @@ interface PipelineChartProps {
 const chartConfig = {
   count: {
     label: "Deal Count",
-    color: "#3b82f6"
+    color: "hsl(var(--primary))"
   },
   value: {
     label: "Deal Value",
-    color: "#10b981"
+    color: "hsl(142.1 76.2% 36.3%)"
   }
 };
 

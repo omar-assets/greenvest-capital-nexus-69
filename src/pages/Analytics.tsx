@@ -68,7 +68,7 @@ const Analytics = () => {
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pipeline Overview */}
-        <Card className="bg-card border-border">
+        <Card className="bg-card border-border shadow-sm">
           <CardHeader>
             <CardTitle className="text-card-foreground">Pipeline Overview</CardTitle>
           </CardHeader>
@@ -78,7 +78,7 @@ const Analytics = () => {
         </Card>
 
         {/* Funding Trends */}
-        <Card className="bg-card border-border">
+        <Card className="bg-card border-border shadow-sm">
           <CardHeader>
             <CardTitle className="text-card-foreground">Funding Trends</CardTitle>
           </CardHeader>
@@ -89,7 +89,7 @@ const Analytics = () => {
       </div>
 
       {/* ISO Performance Table */}
-      <Card className="bg-card border-border">
+      <Card className="bg-card border-border shadow-sm">
         <CardHeader>
           <CardTitle className="text-card-foreground">ISO Performance Leaderboard</CardTitle>
         </CardHeader>
