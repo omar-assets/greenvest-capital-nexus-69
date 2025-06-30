@@ -142,6 +142,65 @@ export type Database = {
           },
         ]
       }
+      deal_documents: {
+        Row: {
+          created_at: string
+          deal_id: string
+          document_category: string
+          file_path: string
+          file_size: number
+          file_type: string
+          filename: string
+          id: string
+          ocr_data: Json | null
+          ocr_status: string | null
+          original_filename: string
+          updated_at: string
+          upload_status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deal_id: string
+          document_category: string
+          file_path: string
+          file_size: number
+          file_type: string
+          filename: string
+          id?: string
+          ocr_data?: Json | null
+          ocr_status?: string | null
+          original_filename: string
+          updated_at?: string
+          upload_status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          deal_id?: string
+          document_category?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          filename?: string
+          id?: string
+          ocr_data?: Json | null
+          ocr_status?: string | null
+          original_filename?: string
+          updated_at?: string
+          upload_status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_documents_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals: {
         Row: {
           amount_requested: number

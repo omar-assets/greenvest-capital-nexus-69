@@ -3,16 +3,31 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDeal } from '@/hooks/useDeals';
+import { useDealDocuments } from '@/hooks/useDealDocuments';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import DealHeader from '@/components/deals/DealHeader';
 import StageProgressIndicator from '@/components/deals/StageProgressIndicator';
 import DealOverviewTab from '@/components/deals/DealOverviewTab';
 import ActivityTimeline from '@/components/deals/ActivityTimeline';
 import DealActionButtons from '@/components/deals/DealActionButtons';
+import DocumentDropzone from '@/components/deals/DocumentDropzone';
+import DocumentGrid from '@/components/deals/DocumentGrid';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 
 const DealDetails = () => {
   const { id } = useParams<{ id: string }>();
+  const { toast } = useToast();
   const { data: deal, isLoading, error } = useDeal(id!);
+  const { 
+    documents, 
+    isLoading: documentsLoading, 
+    uploadDocument, 
+    isUploading,
+    deleteDocument,
+    isDeleting,
+    getDownloadUrl 
+  } = useDealDocuments(id!);
 
   if (isLoading) {
     return (
@@ -58,6 +73,44 @@ const DealDetails = () => {
     );
   }
 
+  const handleViewDocument = async (document: any) => {
+    try {
+      const url = await getDownloadUrl(document.file_path);
+      window.open(url, '_blank');
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to open document",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownloadDocument = async (document: any) => {
+    try {
+      const url = await getDownloadUrl(document.file_path);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = document.original_filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to download document",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleProcessOCR = (documentId: string) => {
+    toast({
+      title: "OCR Processing",
+      description: "OCR processing will be implemented in the next phase.",
+    });
+  };
+
   return (
     <ErrorBoundary>
       <div className="space-y-6">
@@ -88,7 +141,7 @@ const DealDetails = () => {
                   Overview
                 </TabsTrigger>
                 <TabsTrigger value="documents" className="data-[state=active]:bg-slate-700">
-                  Documents
+                  Documents ({documents.length})
                 </TabsTrigger>
                 <TabsTrigger value="activities" className="data-[state=active]:bg-slate-700">
                   Activities
@@ -103,10 +156,34 @@ const DealDetails = () => {
               </TabsContent>
 
               <TabsContent value="documents">
-                <div className="bg-slate-800 border-slate-700 rounded-lg p-6">
-                  <h3 className="text-lg font-medium text-slate-200 mb-4">Documents</h3>
-                  <p className="text-slate-400">Document management will be implemented in the next phase.</p>
-                </div>
+                <Card className="bg-slate-800 border-slate-700">
+                  <CardHeader>
+                    <CardTitle className="text-slate-200">Documents</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <DocumentDropzone 
+                      onUpload={uploadDocument}
+                      isUploading={isUploading}
+                    />
+                    
+                    {documentsLoading ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {[...Array(3)].map((_, i) => (
+                          <div key={i} className="h-48 bg-slate-700 rounded-lg animate-pulse" />
+                        ))}
+                      </div>
+                    ) : (
+                      <DocumentGrid
+                        documents={documents}
+                        onView={handleViewDocument}
+                        onDownload={handleDownloadDocument}
+                        onDelete={deleteDocument}
+                        onProcessOCR={handleProcessOCR}
+                        isDeleting={isDeleting}
+                      />
+                    )}
+                  </CardContent>
+                </Card>
               </TabsContent>
 
               <TabsContent value="activities">
