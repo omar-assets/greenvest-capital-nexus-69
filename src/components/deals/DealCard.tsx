@@ -2,7 +2,7 @@
 import { Draggable } from 'react-beautiful-dnd';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, DollarSign, Mail, Phone } from 'lucide-react';
+import { Calendar, DollarSign, Mail, Phone, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -11,9 +11,10 @@ type Deal = Database['public']['Tables']['deals']['Row'];
 interface DealCardProps {
   deal: Deal;
   index: number;
+  isLoading?: boolean;
 }
 
-const DealCard = ({ deal, index }: DealCardProps) => {
+const DealCard = ({ deal, index, isLoading }: DealCardProps) => {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -65,11 +66,18 @@ const DealCard = ({ deal, index }: DealCardProps) => {
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           className={cn(
-            "bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-grab group mb-2",
+            "bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-grab group mb-2 relative",
             getCardBorderClass(priority),
-            snapshot.isDragging && "rotate-2 shadow-lg scale-105 cursor-grabbing"
+            snapshot.isDragging && "rotate-2 shadow-lg scale-105 cursor-grabbing",
+            isLoading && "opacity-70"
           )}
         >
+          {isLoading && (
+            <div className="absolute inset-0 bg-white/50 flex items-center justify-center rounded-lg z-10">
+              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+            </div>
+          )}
+          
           <CardHeader className="pb-2">
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">

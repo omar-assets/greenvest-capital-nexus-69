@@ -11,6 +11,9 @@ import StageColumn from '@/components/deals/StageColumn';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import type { Database } from '@/integrations/supabase/types';
+
+type Deal = Database['public']['Tables']['deals']['Row'];
 
 const STAGES = [
   { id: 'New', title: 'New', color: 'bg-blue-50 border-blue-200' },
@@ -24,6 +27,7 @@ const STAGES = [
 const Deals = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [dragLoading, setDragLoading] = useState<string | null>(null);
   const { deals = [], isLoading } = useDeals();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -33,13 +37,31 @@ const Deals = () => {
     setFilter,
     searchQuery,
     setSearchQuery,
-    filteredDeals
+    stageFilter,
+    setStageFilter,
+    priorityFilter,
+    setPriorityFilter,
+    filteredDeals,
+    clearAllFilters
   } = useDealFilters(deals);
 
   const { totalDeals, totalValue, avgDaysInPipeline } = useDealStats(filteredDeals);
 
   const updateDealStage = async (dealId: string, newStage: string) => {
+    const previousDeals = queryClient.getQueryData(['deals']) as Deal[];
+    setDragLoading(dealId);
+    
     try {
+      // Optimistic update
+      queryClient.setQueryData(['deals'], (oldData: Deal[] | undefined) => {
+        if (!oldData) return oldData;
+        return oldData.map(deal => 
+          deal.id === dealId 
+            ? { ...deal, stage: newStage, updated_at: new Date().toISOString() }
+            : deal
+        );
+      });
+
       console.log('Updating deal stage:', { dealId, newStage });
       
       const { error } = await supabase
@@ -49,8 +71,12 @@ const Deals = () => {
 
       if (error) throw error;
 
-      // Invalidate and refetch deals data
-      await queryClient.invalidateQueries({ queryKey: ['deals'] });
+      // Invalidate queries to ensure fresh data
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['deals'] }),
+        queryClient.invalidateQueries({ queryKey: ['deal', dealId] }),
+        queryClient.invalidateQueries({ queryKey: ['deal-stats'] })
+      ]);
 
       toast({
         title: "Deal Updated",
@@ -58,14 +84,22 @@ const Deals = () => {
       });
     } catch (error) {
       console.error('Error updating deal stage:', error);
+      
+      // Rollback optimistic update
+      if (previousDeals) {
+        queryClient.setQueryData(['deals'], previousDeals);
+      }
+      
       toast({
         title: "Error",
         description: "Failed to update deal stage. Please try again.",
         variant: "destructive",
       });
       
-      // Refetch data to revert any optimistic updates
+      // Force refetch to ensure data consistency
       queryClient.invalidateQueries({ queryKey: ['deals'] });
+    } finally {
+      setDragLoading(null);
     }
   };
 
@@ -124,6 +158,12 @@ const Deals = () => {
         onFilterChange={setFilter}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        stageFilter={stageFilter}
+        onStageFilterChange={setStageFilter}
+        priorityFilter={priorityFilter}
+        onPriorityFilterChange={setPriorityFilter}
+        onClearAllFilters={clearAllFilters}
+        stages={STAGES}
       />
 
       {/* Kanban Board */}
@@ -137,6 +177,7 @@ const Deals = () => {
                 key={stage.id}
                 stage={stage}
                 deals={stageDeals}
+                dragLoading={dragLoading}
               />
             );
           })}

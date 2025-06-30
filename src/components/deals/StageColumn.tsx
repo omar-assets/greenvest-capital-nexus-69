@@ -3,6 +3,7 @@ import { Droppable } from 'react-beautiful-dnd';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import DealCard from './DealCard';
+import { Loader2 } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type Deal = Database['public']['Tables']['deals']['Row'];
@@ -14,9 +15,10 @@ interface StageColumnProps {
     color: string;
   };
   deals: Deal[];
+  dragLoading?: string | null;
 }
 
-const StageColumn = ({ stage, deals }: StageColumnProps) => {
+const StageColumn = ({ stage, deals, dragLoading }: StageColumnProps) => {
   const getTotalValue = () => {
     return deals.reduce((sum, deal) => sum + deal.amount_requested, 0);
   };
@@ -58,12 +60,17 @@ const StageColumn = ({ stage, deals }: StageColumnProps) => {
 
   return (
     <div className="flex flex-col h-full min-w-[280px]">
-      <div className={cn("rounded-t-lg p-3 border-b", stage.color)}>
+      <div className={cn("rounded-t-lg p-3 border-b relative", stage.color)}>
         <div className="flex items-center justify-between mb-1">
           <h3 className="font-semibold text-slate-700 text-sm">{stage.title}</h3>
-          <Badge variant="outline" className="text-xs">
-            {deals.length}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs">
+              {deals.length}
+            </Badge>
+            {dragLoading && deals.some(deal => deal.id === dragLoading) && (
+              <Loader2 className="h-3 w-3 animate-spin text-slate-500" />
+            )}
+          </div>
         </div>
         {deals.length > 0 && (
           <p className="text-xs text-slate-600 font-medium">
@@ -87,6 +94,7 @@ const StageColumn = ({ stage, deals }: StageColumnProps) => {
                 key={deal.id}
                 deal={deal}
                 index={index}
+                isLoading={dragLoading === deal.id}
               />
             ))}
             {provided.placeholder}

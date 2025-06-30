@@ -7,6 +7,17 @@ type Deal = Database['public']['Tables']['deals']['Row'];
 export const useDealFilters = (deals: Deal[]) => {
   const [filter, setFilter] = useState<string>('my');
   const [searchQuery, setSearchQuery] = useState('');
+  const [stageFilter, setStageFilter] = useState<string>('all');
+  const [priorityFilter, setPriorityFilter] = useState<string>('all');
+
+  const getDealPriority = (deal: Deal) => {
+    const daysInStage = Math.floor((Date.now() - new Date(deal.updated_at).getTime()) / (1000 * 60 * 60 * 24));
+    const amount = deal.amount_requested;
+    
+    if (daysInStage > 10 || amount > 150000) return 'urgent';
+    if (daysInStage > 5 || amount > 75000) return 'high';
+    return 'normal';
+  };
 
   const filteredDeals = useMemo(() => {
     let filtered = [...deals];
@@ -20,6 +31,16 @@ export const useDealFilters = (deals: Deal[]) => {
       const monthAgo = new Date();
       monthAgo.setMonth(monthAgo.getMonth() - 1);
       filtered = filtered.filter(deal => new Date(deal.created_at) >= monthAgo);
+    }
+
+    // Apply stage filter
+    if (stageFilter !== 'all') {
+      filtered = filtered.filter(deal => deal.stage === stageFilter);
+    }
+
+    // Apply priority filter
+    if (priorityFilter !== 'all') {
+      filtered = filtered.filter(deal => getDealPriority(deal) === priorityFilter);
     }
 
     // Apply enhanced search filter
@@ -37,13 +58,28 @@ export const useDealFilters = (deals: Deal[]) => {
     }
 
     return filtered;
-  }, [deals, filter, searchQuery]);
+  }, [deals, filter, searchQuery, stageFilter, priorityFilter]);
+
+  const clearAllFilters = () => {
+    setFilter('my');
+    setSearchQuery('');
+    setStageFilter('all');
+    setPriorityFilter('all');
+  };
+
+  const hasActiveFilters = filter !== 'my' || searchQuery !== '' || stageFilter !== 'all' || priorityFilter !== 'all';
 
   return {
     filter,
     setFilter,
     searchQuery,
     setSearchQuery,
-    filteredDeals
+    stageFilter,
+    setStageFilter,
+    priorityFilter,
+    setPriorityFilter,
+    filteredDeals,
+    clearAllFilters,
+    hasActiveFilters
   };
 };
