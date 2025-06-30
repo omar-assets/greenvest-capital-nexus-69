@@ -178,6 +178,37 @@ export const useCompanies = () => {
     return newCompany as Company;
   };
 
+  // New function to sync applications from webhook
+  const syncApplications = useMutation({
+    mutationFn: async () => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase.functions.invoke('sync-applications');
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      queryClient.invalidateQueries({ queryKey: ['deals'] });
+      
+      if (data.success) {
+        toast({
+          title: "Applications Synced",
+          description: `Successfully synced ${data.totalApplications} applications. Created ${data.companiesCreated} companies and ${data.dealsCreated} deals.`,
+        });
+      }
+    },
+    onError: (error) => {
+      toast({
+        title: "Sync Error",
+        description: "Failed to sync applications from webhook. Please try again.",
+        variant: "destructive",
+      });
+      console.error('Error syncing applications:', error);
+    },
+  });
+
   return {
     companies,
     isLoading,
@@ -188,6 +219,8 @@ export const useCompanies = () => {
     updateCompany: updateCompany.mutate,
     isUpdating: updateCompany.isPending,
     findOrCreateCompany,
+    syncApplications: syncApplications.mutate,
+    isSyncing: syncApplications.isPending,
   };
 };
 
