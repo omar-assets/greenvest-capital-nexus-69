@@ -39,6 +39,14 @@ export const useAnalytics = (dateRange: DateRange) => {
 
       if (offersError) throw offersError;
 
+      // Fetch ISOs for performance calculations
+      const { data: isos, error: isosError } = await supabase
+        .from('isos')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (isosError) throw isosError;
+
       // Calculate KPIs
       const totalPipelineValue = deals?.reduce((sum, deal) => sum + (deal.amount_requested || 0), 0) || 0;
       const fundedDeals = deals?.filter(deal => deal.stage === 'Funded') || [];
@@ -84,14 +92,34 @@ export const useAnalytics = (dateRange: DateRange) => {
         });
       }
 
-      // Mock ISO performance data (since we don't have ISO tracking yet)
-      const isoPerformanceData = [
-        { name: 'John Smith', deals: 15, revenue: 450000, commission: 22500, conversionRate: 85 },
-        { name: 'Sarah Johnson', deals: 12, revenue: 380000, commission: 19000, conversionRate: 78 },
-        { name: 'Mike Davis', deals: 10, revenue: 295000, commission: 14750, conversionRate: 72 },
-        { name: 'Lisa Chen', deals: 8, revenue: 240000, commission: 12000, conversionRate: 68 },
-        { name: 'Tom Wilson', deals: 6, revenue: 180000, commission: 9000, conversionRate: 65 }
-      ];
+      // Calculate real ISO performance data
+      const isoPerformanceData = (isos || []).map(iso => {
+        const isoDeals = deals?.filter(deal => deal.iso_id === iso.id) || [];
+        const isoFundedDeals = isoDeals.filter(deal => deal.stage === 'Funded');
+        const totalRevenue = isoFundedDeals.reduce((sum, deal) => sum + (deal.amount_requested || 0), 0);
+        
+        // Calculate commission based on offers
+        const isoOffers = offers?.filter(offer => {
+          const dealId = offer.deal_id;
+          return isoDeals.some(deal => deal.id === dealId);
+        }) || [];
+        
+        const totalCommission = isoOffers.reduce((sum, offer) => {
+          const commissionRate = offer.iso_commission_rate || iso.commission_rate || 0.05;
+          return sum + (offer.amount * commissionRate);
+        }, 0);
+
+        const conversionRate = isoDeals.length > 0 ? Math.round((isoFundedDeals.length / isoDeals.length) * 100) : 0;
+
+        return {
+          name: iso.iso_name,
+          deals: isoFundedDeals.length,
+          revenue: totalRevenue,
+          commission: totalCommission,
+          conversionRate
+        };
+      }).filter(iso => iso.deals > 0) // Only show ISOs with actual deals
+        .sort((a, b) => b.deals - a.deals); // Sort by deals closed (descending)
 
       return {
         kpiData: {

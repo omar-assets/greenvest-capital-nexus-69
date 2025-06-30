@@ -2,6 +2,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCurrency } from '@/utils/offerUtils';
 import { Badge } from '@/components/ui/badge';
+import { Users } from 'lucide-react';
 
 interface ISOPerformanceData {
   name: string;
@@ -21,6 +22,21 @@ export function ISOPerformanceTable({ data }: ISOPerformanceTableProps) {
     if (rate >= 70) return 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30';
     return 'bg-red-500/20 text-red-400 hover:bg-red-500/30';
   };
+
+  if (data.length === 0) {
+    return (
+      <div className="rounded-lg border border-slate-600 bg-slate-800/30 p-8">
+        <div className="text-center">
+          <Users className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-slate-200 mb-2">No ISO Performance Data</h3>
+          <p className="text-slate-400 text-sm max-w-md mx-auto">
+            ISO performance metrics will appear here once you start tracking ISOs in your deals. 
+            You can assign ISOs to deals when creating or editing them.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-lg border border-slate-600 overflow-hidden">
@@ -64,13 +80,6 @@ export function ISOPerformanceTable({ data }: ISOPerformanceTableProps) {
               </TableCell>
             </TableRow>
           ))}
-          {data.length === 0 && (
-            <TableRow>
-              <TableCell colSpan={5} className="text-center text-slate-400 py-8">
-                No ISO performance data available
-              </TableCell>
-            </TableRow>
-          )}
         </TableBody>
       </Table>
     </div>

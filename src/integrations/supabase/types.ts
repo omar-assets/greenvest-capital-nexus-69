@@ -304,6 +304,8 @@ export type Database = {
           email: string | null
           factor_rate: number | null
           id: string
+          iso_id: string | null
+          iso_name: string | null
           monthly_revenue: number | null
           phone: string | null
           stage: string
@@ -329,6 +331,8 @@ export type Database = {
           email?: string | null
           factor_rate?: number | null
           id?: string
+          iso_id?: string | null
+          iso_name?: string | null
           monthly_revenue?: number | null
           phone?: string | null
           stage?: string
@@ -354,6 +358,8 @@ export type Database = {
           email?: string | null
           factor_rate?: number | null
           id?: string
+          iso_id?: string | null
+          iso_name?: string | null
           monthly_revenue?: number | null
           phone?: string | null
           stage?: string
@@ -373,7 +379,50 @@ export type Database = {
             referencedRelation: "companies"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "deals_iso_id_fkey"
+            columns: ["iso_id"]
+            isOneToOne: false
+            referencedRelation: "isos"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      isos: {
+        Row: {
+          commission_rate: number | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          id: string
+          iso_name: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          commission_rate?: number | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          iso_name: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          commission_rate?: number | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          id?: string
+          iso_name?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       offers: {
         Row: {
@@ -386,6 +435,7 @@ export type Database = {
           factor_rate: number
           id: string
           iso_commission: number | null
+          iso_commission_rate: number | null
           notes: string | null
           offer_number: string
           payment_frequency: string
@@ -410,6 +460,7 @@ export type Database = {
           factor_rate?: number
           id?: string
           iso_commission?: number | null
+          iso_commission_rate?: number | null
           notes?: string | null
           offer_number: string
           payment_frequency?: string
@@ -434,6 +485,7 @@ export type Database = {
           factor_rate?: number
           id?: string
           iso_commission?: number | null
+          iso_commission_rate?: number | null
           notes?: string | null
           offer_number?: string
           payment_frequency?: string
