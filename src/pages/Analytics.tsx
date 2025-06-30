@@ -8,7 +8,13 @@ import { useAnalytics } from '@/hooks/useAnalytics';
 import { Calendar } from 'lucide-react';
 
 const Analytics = () => {
-  const { data, isLoading, error } = useAnalytics();
+  // Create default date range for the last 30 days
+  const dateRange = {
+    from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 days ago
+    to: new Date() // today
+  };
+
+  const { kpiData, pipelineData, fundingTrendsData, isoPerformanceData, isLoading, error } = useAnalytics(dateRange);
 
   if (isLoading) {
     return (
@@ -57,7 +63,7 @@ const Analytics = () => {
       </div>
 
       {/* KPI Cards */}
-      <KPICards data={data.kpis} />
+      <KPICards data={kpiData} />
 
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -67,7 +73,7 @@ const Analytics = () => {
             <CardTitle className="text-card-foreground">Pipeline Overview</CardTitle>
           </CardHeader>
           <CardContent>
-            <PipelineChart data={data.pipelineData} />
+            <PipelineChart data={pipelineData} />
           </CardContent>
         </Card>
 
@@ -77,7 +83,7 @@ const Analytics = () => {
             <CardTitle className="text-card-foreground">Funding Trends</CardTitle>
           </CardHeader>
           <CardContent>
-            <FundingTrendsChart data={data.fundingTrends} />
+            <FundingTrendsChart data={fundingTrendsData} />
           </CardContent>
         </Card>
       </div>
@@ -88,7 +94,7 @@ const Analytics = () => {
           <CardTitle className="text-card-foreground">ISO Performance Leaderboard</CardTitle>
         </CardHeader>
         <CardContent>
-          <ISOPerformanceTable data={data.isoPerformance} />
+          <ISOPerformanceTable data={isoPerformanceData} />
         </CardContent>
       </Card>
     </div>
