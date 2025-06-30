@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, AlertCircle } from 'lucide-react';
 import { format, subDays } from 'date-fns';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { KPICards } from '@/components/analytics/KPICards';
@@ -24,7 +24,8 @@ export default function Analytics() {
     pipelineData, 
     isoPerformanceData, 
     fundingTrendsData,
-    isLoading 
+    isLoading,
+    error 
   } = useAnalytics(dateRange);
 
   const handleDateRangeChange = (range: { from?: Date; to?: Date }) => {
@@ -33,6 +34,20 @@ export default function Analytics() {
       setIsDatePickerOpen(false);
     }
   };
+
+  if (error) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <AlertCircle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-slate-200 mb-2">Failed to Load Analytics</h3>
+            <p className="text-slate-400">There was an error loading the analytics data. Please try again later.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

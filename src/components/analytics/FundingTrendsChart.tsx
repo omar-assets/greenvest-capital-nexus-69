@@ -58,10 +58,12 @@ export function FundingTrendsChart({ data }: FundingTrendsChartProps) {
             className="text-slate-400"
             tickFormatter={(value) => format(new Date(value), 'MMM dd')}
           />
-          <YAxis className="text-slate-400" />
+          <YAxis yAxisId="left" className="text-slate-400" />
+          <YAxis yAxisId="right" orientation="right" className="text-slate-400" />
           <Tooltip content={<CustomTooltip />} />
           <Legend />
           <Line 
+            yAxisId="left"
             type="monotone" 
             dataKey="deals" 
             name="Deals Funded"
@@ -71,6 +73,7 @@ export function FundingTrendsChart({ data }: FundingTrendsChartProps) {
             activeDot={{ r: 6 }}
           />
           <Line 
+            yAxisId="right"
             type="monotone" 
             dataKey="amount" 
             name="Amount Funded"
@@ -78,7 +81,6 @@ export function FundingTrendsChart({ data }: FundingTrendsChartProps) {
             strokeWidth={2}
             dot={{ fill: chartConfig.amount.color, strokeWidth: 2, r: 4 }}
             activeDot={{ r: 6 }}
-            yAxisId="right"
           />
         </LineChart>
       </ResponsiveContainer>

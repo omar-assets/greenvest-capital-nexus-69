@@ -1,6 +1,6 @@
 
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from 'recharts';
-import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartContainer } from '@/components/ui/chart';
 import { formatCurrency } from '@/utils/offerUtils';
 
 interface PipelineData {
@@ -25,13 +25,6 @@ const chartConfig = {
 };
 
 export function PipelineChart({ data }: PipelineChartProps) {
-  const formatTooltipValue = (value: number, name: string) => {
-    if (name === 'value') {
-      return formatCurrency(value);
-    }
-    return value;
-  };
-
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -40,7 +33,11 @@ export function PipelineChart({ data }: PipelineChartProps) {
           {payload.map((entry: any, index: number) => (
             <p key={index} className="text-slate-300 text-sm">
               <span style={{ color: entry.color }}>●</span>
-              {` ${entry.name}: ${formatTooltipValue(entry.value, entry.dataKey)}`}
+              {` ${entry.name}: ${
+                entry.dataKey === 'value' 
+                  ? formatCurrency(entry.value)
+                  : entry.value
+              }`}
             </p>
           ))}
         </div>
@@ -52,7 +49,7 @@ export function PipelineChart({ data }: PipelineChartProps) {
   return (
     <ChartContainer config={chartConfig} className="h-80 w-full">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+        <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
           <XAxis 
             dataKey="stage" 
             className="text-slate-400"
@@ -61,21 +58,23 @@ export function PipelineChart({ data }: PipelineChartProps) {
             height={80}
             interval={0}
           />
-          <YAxis className="text-slate-400" />
+          <YAxis yAxisId="left" className="text-slate-400" />
+          <YAxis yAxisId="right" orientation="right" className="text-slate-400" />
           <Tooltip content={<CustomTooltip />} />
           <Legend />
           <Bar 
+            yAxisId="left"
             dataKey="count" 
             name="Deal Count"
             fill={chartConfig.count.color}
             radius={[2, 2, 0, 0]}
           />
           <Bar 
+            yAxisId="right"
             dataKey="value" 
             name="Deal Value ($)"
             fill={chartConfig.value.color}
             radius={[2, 2, 0, 0]}
-            yAxisId="right"
           />
         </BarChart>
       </ResponsiveContainer>

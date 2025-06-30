@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
@@ -7,6 +6,7 @@ import {
   LayoutDashboard, 
   Building2, 
   FileText, 
+  BarChart3,
   LogOut, 
   Menu,
   X 
@@ -27,6 +27,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Deals', href: '/deals', icon: FileText },
     { name: 'Companies', href: '/companies', icon: Building2 },
+    { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   ];
 
   const isActive = (path: string) => location.pathname === path;
