@@ -17,11 +17,15 @@ export type Database = {
           company_name: string
           created_at: string
           dba_name: string | null
+          external_app_id: number | null
+          external_app_number: string | null
           id: string
           industry: string | null
+          last_synced_at: string | null
           state: string | null
           updated_at: string
           user_id: string
+          webhook_metadata: Json | null
           years_in_business: number | null
           zip_code: string | null
         }
@@ -32,11 +36,15 @@ export type Database = {
           company_name: string
           created_at?: string
           dba_name?: string | null
+          external_app_id?: number | null
+          external_app_number?: string | null
           id?: string
           industry?: string | null
+          last_synced_at?: string | null
           state?: string | null
           updated_at?: string
           user_id: string
+          webhook_metadata?: Json | null
           years_in_business?: number | null
           zip_code?: string | null
         }
@@ -47,11 +55,15 @@ export type Database = {
           company_name?: string
           created_at?: string
           dba_name?: string | null
+          external_app_id?: number | null
+          external_app_number?: string | null
           id?: string
           industry?: string | null
+          last_synced_at?: string | null
           state?: string | null
           updated_at?: string
           user_id?: string
+          webhook_metadata?: Json | null
           years_in_business?: number | null
           zip_code?: string | null
         }
