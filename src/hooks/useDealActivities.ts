@@ -40,7 +40,7 @@ export const useDealActivities = (dealId: string, filter?: ActivityFilter) => {
         .from('deal_activities')
         .select(`
           *,
-          profiles:user_id (
+          profiles:profiles!deal_activities_user_id_fkey (
             full_name,
             email
           )
@@ -69,8 +69,13 @@ export const useDealActivities = (dealId: string, filter?: ActivityFilter) => {
         throw error;
       }
       
-      // Return the data as-is, let TypeScript handle the type inference
-      return (data || []) as ActivityWithProfile[];
+      // Transform the data to match our expected type
+      return (data || []).map(activity => ({
+        ...activity,
+        profiles: Array.isArray(activity.profiles) && activity.profiles.length > 0 
+          ? activity.profiles[0] 
+          : null
+      })) as ActivityWithProfile[];
     },
     enabled: !!user?.id && !!dealId,
   });
