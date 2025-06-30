@@ -1,43 +1,41 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Filter } from 'lucide-react';
+import { Plus, Filter, Calendar, DollarSign } from 'lucide-react';
 import { useDeals } from '@/hooks/useDeals';
 import CreateDealModal from '@/components/CreateDealModal';
-import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+
+type Deal = {
+  id: string;
+  deal_number: string;
+  company_name: string;
+  contact_name?: string;
+  amount_requested: number;
+  stage: string;
+  created_at: string;
+  updated_at: string;
+};
+
+const STAGES = [
+  { id: 'New', title: 'New', color: 'bg-blue-50 border-blue-200' },
+  { id: 'Reviewing Documents', title: 'Reviewing Documents', color: 'bg-yellow-50 border-yellow-200' },
+  { id: 'Underwriting', title: 'Underwriting', color: 'bg-purple-50 border-purple-200' },
+  { id: 'Offer Sent', title: 'Offer Sent', color: 'bg-orange-50 border-orange-200' },
+  { id: 'Funded', title: 'Funded', color: 'bg-green-50 border-green-200' },
+  { id: 'Declined', title: 'Declined', color: 'bg-red-50 border-red-200' },
+];
 
 const Deals = () => {
-  const [searchTerm, setSearchTerm] = useState('');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const { deals, isLoading } = useDeals();
-
-  // Filter deals based on search term
-  const filteredDeals = deals?.filter(deal =>
-    deal.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    deal.deal_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    deal.stage.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (deal.contact_name && deal.contact_name.toLowerCase().includes(searchTerm.toLowerCase()))
-  ) || [];
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Application Received':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-      case 'Under Review':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      case 'Approved':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'Funded':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
-      case 'Declined':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
-    }
-  };
+  const [filter, setFilter] = useState<'my' | 'all' | 'week'>('my');
+  const { deals = [], isLoading } = useDeals();
+  const { toast } = useToast();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -48,12 +46,73 @@ const Deals = () => {
     }).format(amount);
   };
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+  const getDaysInStage = (updatedAt: string) => {
+    const days = Math.floor((Date.now() - new Date(updatedAt).getTime()) / (1000 * 60 * 60 * 24));
+    return days;
+  };
+
+  const getCardPriority = (deal: Deal) => {
+    const daysInStage = getDaysInStage(deal.updated_at);
+    const amount = deal.amount_requested;
+    
+    if (daysInStage > 7 || amount > 100000) return 'urgent';
+    if (daysInStage > 3 || amount > 50000) return 'high';
+    return 'normal';
+  };
+
+  const getCardBorderClass = (priority: string) => {
+    switch (priority) {
+      case 'urgent': return 'border-l-4 border-l-red-500';
+      case 'high': return 'border-l-4 border-l-orange-500';
+      default: return 'border-l-4 border-l-gray-300';
+    }
+  };
+
+  const updateDealStage = async (dealId: string, newStage: string) => {
+    try {
+      const { error } = await supabase
+        .from('deals')
+        .update({ stage: newStage, updated_at: new Date().toISOString() })
+        .eq('id', dealId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Deal Updated",
+        description: `Deal moved to ${newStage}`,
+      });
+    } catch (error) {
+      console.error('Error updating deal stage:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update deal stage",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+
+    const { source, destination, draggableId } = result;
+    
+    if (source.droppableId === destination.droppableId) return;
+
+    const newStage = destination.droppableId;
+    updateDealStage(draggableId, newStage);
+  };
+
+  const filteredDeals = deals.filter(deal => {
+    if (filter === 'week') {
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      return new Date(deal.created_at) >= weekAgo;
+    }
+    return true; // 'my' and 'all' show same deals for now since we only show user's deals
+  });
+
+  const getDealsForStage = (stageId: string) => {
+    return filteredDeals.filter(deal => deal.stage === stageId);
   };
 
   if (isLoading) {
@@ -66,7 +125,7 @@ const Deals = () => {
           </div>
           <div className="h-10 w-32 bg-slate-700 rounded animate-pulse mt-4 sm:mt-0"></div>
         </div>
-        <div className="h-64 bg-slate-800 rounded-lg animate-pulse"></div>
+        <div className="h-96 bg-slate-800 rounded-lg animate-pulse"></div>
       </div>
     );
   }
@@ -76,9 +135,9 @@ const Deals = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-200">Deals</h1>
+          <h1 className="text-2xl font-bold text-slate-200">Deal Pipeline</h1>
           <p className="text-slate-400 mt-1">
-            Manage your MCA funding applications and track their progress.
+            Manage your MCA funding applications through the pipeline.
           </p>
         </div>
         <Button 
@@ -90,117 +149,132 @@ const Deals = () => {
         </Button>
       </div>
 
-      {/* Search and Filter Bar */}
+      {/* Filter Bar */}
       <Card className="bg-slate-800 border-slate-700">
         <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
-              <Input
-                placeholder="Search deals by company name, deal number, or stage..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 bg-slate-700 border-slate-600 text-slate-200"
-              />
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-slate-400" />
+              <span className="text-sm text-slate-300">Filter:</span>
             </div>
-            <Button 
-              variant="outline" 
-              className="sm:w-auto border-slate-600 text-slate-200 hover:bg-slate-700"
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
-            </Button>
+            <div className="flex gap-2">
+              {[
+                { key: 'my', label: 'My Deals' },
+                { key: 'all', label: 'All Deals' },
+                { key: 'week', label: 'This Week' }
+              ].map(({ key, label }) => (
+                <Button
+                  key={key}
+                  variant={filter === key ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilter(key as any)}
+                  className={filter === key ? "bg-blue-600 hover:bg-blue-700" : "border-slate-600 text-slate-200 hover:bg-slate-700"}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Deals Table */}
-      <Card className="bg-slate-800 border-slate-700">
-        <CardHeader>
-          <CardTitle className="text-slate-200">
-            All Deals ({filteredDeals.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {filteredDeals.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="mx-auto h-12 w-12 text-slate-500 mb-4">
-                <Plus className="h-12 w-12" />
+      {/* Kanban Board */}
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 min-h-[600px]">
+          {STAGES.map((stage) => {
+            const stageDeals = getDealsForStage(stage.id);
+            
+            return (
+              <div key={stage.id} className="flex flex-col">
+                <div className={cn("rounded-t-lg p-3 border-b", stage.color)}>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-medium text-slate-700 text-sm">{stage.title}</h3>
+                    <Badge variant="outline" className="text-xs">
+                      {stageDeals.length}
+                    </Badge>
+                  </div>
+                </div>
+                
+                <Droppable droppableId={stage.id}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={cn(
+                        "flex-1 p-2 space-y-2 min-h-[400px] bg-slate-50 rounded-b-lg border-l border-r border-b",
+                        snapshot.isDraggingOver && "bg-slate-100"
+                      )}
+                    >
+                      {stageDeals.map((deal, index) => {
+                        const priority = getCardPriority(deal);
+                        const daysInStage = getDaysInStage(deal.updated_at);
+                        
+                        return (
+                          <Draggable key={deal.id} draggableId={deal.id} index={index}>
+                            {(provided, snapshot) => (
+                              <Card
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className={cn(
+                                  "bg-white shadow-sm hover:shadow-md transition-shadow cursor-grab",
+                                  getCardBorderClass(priority),
+                                  snapshot.isDragging && "rotate-3 shadow-lg"
+                                )}
+                              >
+                                <CardHeader className="pb-2">
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1 min-w-0">
+                                      <h4 className="font-medium text-slate-800 text-sm truncate">
+                                        {deal.company_name}
+                                      </h4>
+                                      <p className="text-xs text-slate-500 font-mono">
+                                        {deal.deal_number}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </CardHeader>
+                                <CardContent className="pt-0">
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-1">
+                                      <DollarSign className="h-3 w-3 text-slate-400" />
+                                      <span className="text-sm font-medium text-slate-700">
+                                        {formatCurrency(deal.amount_requested)}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <Calendar className="h-3 w-3 text-slate-400" />
+                                      <span className="text-xs text-slate-500">
+                                        {daysInStage} days in stage
+                                      </span>
+                                    </div>
+                                    {deal.contact_name && (
+                                      <p className="text-xs text-slate-500 truncate">
+                                        {deal.contact_name}
+                                      </p>
+                                    )}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            )}
+                          </Draggable>
+                        );
+                      })}
+                      {provided.placeholder}
+                      
+                      {stageDeals.length === 0 && (
+                        <div className="flex items-center justify-center h-32 text-slate-400 text-sm">
+                          No deals in this stage
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </Droppable>
               </div>
-              <h3 className="text-lg font-medium text-slate-200 mb-2">
-                {searchTerm ? 'No deals found' : 'No deals yet'}
-              </h3>
-              <p className="text-slate-400 mb-4">
-                {searchTerm 
-                  ? 'Try adjusting your search criteria.'
-                  : 'Get started by creating your first MCA deal.'
-                }
-              </p>
-              {!searchTerm && (
-                <Button 
-                  onClick={() => setIsCreateModalOpen(true)}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create First Deal
-                </Button>
-              )}
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-slate-700">
-                    <th className="text-left py-3 px-4 font-medium text-slate-300">Deal Number</th>
-                    <th className="text-left py-3 px-4 font-medium text-slate-300">Company Name</th>
-                    <th className="text-left py-3 px-4 font-medium text-slate-300">Amount Requested</th>
-                    <th className="text-left py-3 px-4 font-medium text-slate-300">Stage</th>
-                    <th className="text-left py-3 px-4 font-medium text-slate-300">Date Created</th>
-                    <th className="text-left py-3 px-4 font-medium text-slate-300">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredDeals.map((deal) => (
-                    <tr key={deal.id} className="border-b border-slate-700 hover:bg-slate-700/50">
-                      <td className="py-3 px-4">
-                        <div className="font-mono text-sm text-slate-300">{deal.deal_number}</div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="font-medium text-slate-200">{deal.company_name}</div>
-                        {deal.contact_name && (
-                          <div className="text-sm text-slate-400">{deal.contact_name}</div>
-                        )}
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="text-slate-200">{formatCurrency(deal.amount_requested)}</div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <Badge className={getStatusColor(deal.stage)}>
-                          {deal.stage}
-                        </Badge>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="text-slate-400">{formatDate(deal.created_at)}</div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <Link to={`/deals/${deal.id}`}>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            className="border-slate-600 text-slate-200 hover:bg-slate-700"
-                          >
-                            View Details
-                          </Button>
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            );
+          })}
+        </div>
+      </DragDropContext>
 
       <CreateDealModal 
         open={isCreateModalOpen} 

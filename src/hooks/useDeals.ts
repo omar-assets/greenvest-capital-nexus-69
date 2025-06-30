@@ -68,12 +68,39 @@ export const useDeals = () => {
     },
   });
 
+  // Update deal mutation
+  const updateDeal = useMutation({
+    mutationFn: async ({ id, ...updateData }: DealUpdate & { id: string }) => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('deals')
+        .update(updateData)
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as Deal;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['deals'] });
+      queryClient.invalidateQueries({ queryKey: ['deal', data.id] });
+    },
+    onError: (error) => {
+      console.error('Error updating deal:', error);
+    },
+  });
+
   return {
     deals,
     isLoading,
     error,
     createDeal: createDeal.mutate,
     isCreating: createDeal.isPending,
+    updateDeal: updateDeal.mutate,
+    isUpdating: updateDeal.isPending,
   };
 };
 
