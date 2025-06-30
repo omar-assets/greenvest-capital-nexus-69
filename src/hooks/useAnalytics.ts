@@ -2,8 +2,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { useRetry } from '@/hooks/useRetry';
-import { formatCurrency } from '@/utils/offerUtils';
 
 interface DateRange {
   from: Date;
@@ -12,12 +10,13 @@ interface DateRange {
 
 export const useAnalytics = (dateRange: DateRange) => {
   const { user } = useAuth();
-  const { retry } = useRetry();
 
   const fetchAnalyticsData = async () => {
     if (!user?.id) return null;
 
-    return retry(async () => {
+    try {
+      console.log('Starting analytics data fetch...');
+      
       // Fetch all deals within date range
       const { data: deals, error: dealsError } = await supabase
         .from('deals')
@@ -27,7 +26,12 @@ export const useAnalytics = (dateRange: DateRange) => {
         .gte('created_at', dateRange.from.toISOString())
         .lte('created_at', dateRange.to.toISOString());
 
-      if (dealsError) throw dealsError;
+      if (dealsError) {
+        console.error('Deals fetch error:', dealsError);
+        throw dealsError;
+      }
+
+      console.log('Deals fetched successfully:', deals?.length || 0);
 
       // Fetch offers for conversion calculations
       const { data: offers, error: offersError } = await supabase
@@ -37,7 +41,12 @@ export const useAnalytics = (dateRange: DateRange) => {
         .gte('created_at', dateRange.from.toISOString())
         .lte('created_at', dateRange.to.toISOString());
 
-      if (offersError) throw offersError;
+      if (offersError) {
+        console.error('Offers fetch error:', offersError);
+        // Don't throw, just log and continue with empty offers
+      }
+
+      console.log('Offers fetched:', offers?.length || 0);
 
       // Fetch ISOs for performance calculations
       const { data: isos, error: isosError } = await supabase
@@ -45,7 +54,12 @@ export const useAnalytics = (dateRange: DateRange) => {
         .select('*')
         .eq('user_id', user.id);
 
-      if (isosError) throw isosError;
+      if (isosError) {
+        console.error('ISOs fetch error:', isosError);
+        // Don't throw, just log and continue with empty ISOs
+      }
+
+      console.log('ISOs fetched:', isos?.length || 0);
 
       // Calculate KPIs
       const totalPipelineValue = deals?.reduce((sum, deal) => sum + (deal.amount_requested || 0), 0) || 0;
@@ -92,13 +106,12 @@ export const useAnalytics = (dateRange: DateRange) => {
         });
       }
 
-      // Calculate real ISO performance data
+      // Calculate ISO performance data
       const isoPerformanceData = (isos || []).map(iso => {
         const isoDeals = deals?.filter(deal => deal.iso_id === iso.id) || [];
         const isoFundedDeals = isoDeals.filter(deal => deal.stage === 'Funded');
         const totalRevenue = isoFundedDeals.reduce((sum, deal) => sum + (deal.amount_requested || 0), 0);
         
-        // Calculate commission based on offers
         const isoOffers = offers?.filter(offer => {
           const dealId = offer.deal_id;
           return isoDeals.some(deal => deal.id === dealId);
@@ -118,8 +131,10 @@ export const useAnalytics = (dateRange: DateRange) => {
           commission: totalCommission,
           conversionRate
         };
-      }).filter(iso => iso.deals > 0) // Only show ISOs with actual deals
-        .sort((a, b) => b.deals - a.deals); // Sort by deals closed (descending)
+      }).filter(iso => iso.deals > 0)
+        .sort((a, b) => b.deals - a.deals);
+
+      console.log('Analytics data processed successfully');
 
       return {
         kpiData: {
@@ -132,7 +147,10 @@ export const useAnalytics = (dateRange: DateRange) => {
         fundingTrendsData,
         isoPerformanceData
       };
-    }, 'fetch analytics data');
+    } catch (error) {
+      console.error('Analytics fetch failed:', error);
+      throw error;
+    }
   };
 
   const { data, isLoading, error } = useQuery({
@@ -140,6 +158,8 @@ export const useAnalytics = (dateRange: DateRange) => {
     queryFn: fetchAnalyticsData,
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
+    retryDelay: 1000,
   });
 
   return {
