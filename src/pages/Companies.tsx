@@ -265,7 +265,7 @@ const Companies = () => {
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <div>
-                          <div className="font-medium text-slate-300 flex items-center gap-2 bg-transparent">
+                          <div className="font-medium text-slate-300 flex items-center gap-2 bg-transparent px-px py-[5px] my-0 mx-0">
                             {company.company_name}
                             {isRecentlySynced(company) && <Badge variant="outline" className="text-green-600 border-green-600 text-xs">
                                 <Clock className="h-3 w-3 mr-1" />
