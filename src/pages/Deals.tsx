@@ -4,14 +4,17 @@ import { DragDropContext, DropResult } from 'react-beautiful-dnd';
 import { useDeals } from '@/hooks/useDeals';
 import { useDealFilters } from '@/hooks/useDealFilters';
 import { useDealStats } from '@/hooks/useDealStats';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import CreateDealModal from '@/components/CreateDealModal';
 import DealPipelineHeader from '@/components/deals/DealPipelineHeader';
 import FilterBar from '@/components/deals/FilterBar';
 import StageColumn from '@/components/deals/StageColumn';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { AlertCircle, Wifi, WifiOff } from 'lucide-react';
 import type { Database } from '@/integrations/supabase/types';
 
 type Deal = Database['public']['Tables']['deals']['Row'];
@@ -25,13 +28,27 @@ const STAGES = [
   { id: 'Declined', title: 'Declined', color: 'bg-red-50 border-red-200' },
 ];
 
-const Deals = () => {
+const NetworkStatusIndicator = () => {
+  const { isOnline } = useNetworkStatus();
+  
+  if (isOnline) return null;
+  
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg mb-4">
+      <WifiOff className="h-4 w-4 text-red-500" />
+      <span className="text-sm text-red-700">You're offline. Changes will sync when connection is restored.</span>
+    </div>
+  );
+};
+
+const DealsContent = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [dragLoading, setDragLoading] = useState<string | null>(null);
-  const { deals = [], isLoading } = useDeals();
+  const { deals = [], isLoading, error, refetch } = useDeals();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { isOnline } = useNetworkStatus();
 
   const {
     filter,
@@ -94,12 +111,16 @@ const Deals = () => {
       
       toast({
         title: "Error",
-        description: "Failed to update deal stage. Please try again.",
+        description: isOnline 
+          ? "Failed to update deal stage. Please try again."
+          : "You're offline. Changes will be saved when connection is restored.",
         variant: "destructive",
       });
       
       // Force refetch to ensure data consistency
-      queryClient.invalidateQueries({ queryKey: ['deals'] });
+      if (isOnline) {
+        queryClient.invalidateQueries({ queryKey: ['deals'] });
+      }
     } finally {
       setDragLoading(null);
     }
@@ -112,7 +133,16 @@ const Deals = () => {
   const handleDragEnd = (result: DropResult) => {
     setIsDragging(false);
     
-    if (!result.destination) return;
+    if (!result.destination || !isOnline) {
+      if (!isOnline) {
+        toast({
+          title: "Offline",
+          description: "Connect to the internet to move deals.",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
 
     const { source, destination, draggableId } = result;
     
@@ -132,6 +162,26 @@ const Deals = () => {
       clearAllFilters();
     }
   };
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] p-6 text-center">
+        <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+        <h2 className="text-lg font-semibold text-slate-900 mb-2">
+          Failed to Load Deals
+        </h2>
+        <p className="text-sm text-slate-600 mb-4">
+          We couldn't load your deals. Please check your connection and try again.
+        </p>
+        <button
+          onClick={() => refetch()}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -159,6 +209,8 @@ const Deals = () => {
       onKeyDown={handleKeyDown}
       tabIndex={-1}
     >
+      <NetworkStatusIndicator />
+      
       <DealPipelineHeader
         onCreateDeal={() => setIsCreateModalOpen(true)}
         totalDeals={totalDeals}
@@ -189,12 +241,14 @@ const Deals = () => {
               
               return (
                 <div key={stage.id} className="w-80 sm:w-72 lg:w-80 flex-shrink-0">
-                  <StageColumn
-                    stage={stage}
-                    deals={stageDeals}
-                    dragLoading={dragLoading}
-                    onCreateDeal={() => setIsCreateModalOpen(true)}
-                  />
+                  <ErrorBoundary>
+                    <StageColumn
+                      stage={stage}
+                      deals={stageDeals}
+                      dragLoading={dragLoading}
+                      onCreateDeal={() => setIsCreateModalOpen(true)}
+                    />
+                  </ErrorBoundary>
                 </div>
               );
             })}
@@ -208,6 +262,14 @@ const Deals = () => {
         onOpenChange={setIsCreateModalOpen} 
       />
     </div>
+  );
+};
+
+const Deals = () => {
+  return (
+    <ErrorBoundary>
+      <DealsContent />
+    </ErrorBoundary>
   );
 };
 

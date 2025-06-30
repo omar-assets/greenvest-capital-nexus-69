@@ -9,6 +9,44 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      deal_audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          deal_id: string
+          id: string
+          new_values: Json | null
+          old_values: Json | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          deal_id: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          deal_id?: string
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_audit_log_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals: {
         Row: {
           amount_requested: number
@@ -16,6 +54,7 @@ export type Database = {
           contact_name: string | null
           created_at: string
           deal_number: string
+          deleted_at: string | null
           email: string | null
           id: string
           phone: string | null
@@ -29,6 +68,7 @@ export type Database = {
           contact_name?: string | null
           created_at?: string
           deal_number?: string
+          deleted_at?: string | null
           email?: string | null
           id?: string
           phone?: string | null
@@ -42,6 +82,7 @@ export type Database = {
           contact_name?: string | null
           created_at?: string
           deal_number?: string
+          deleted_at?: string | null
           email?: string | null
           id?: string
           phone?: string | null
@@ -86,6 +127,14 @@ export type Database = {
       generate_deal_number: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      restore_deal: {
+        Args: { deal_id: string }
+        Returns: boolean
+      }
+      soft_delete_deal: {
+        Args: { deal_id: string }
+        Returns: boolean
       }
     }
     Enums: {

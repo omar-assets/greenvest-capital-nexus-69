@@ -1,9 +1,11 @@
 
+import React from 'react';
 import { Droppable } from 'react-beautiful-dnd';
 import { cn } from '@/lib/utils';
 import DealCard from './DealCard';
 import StageHeader from './StageHeader';
 import EmptyState from './EmptyState';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { sortDealsByPriority, calculatePriorityScore } from '@/utils/priorityUtils';
 import type { Database } from '@/integrations/supabase/types';
 
@@ -20,6 +22,28 @@ interface StageColumnProps {
   onCreateDeal?: () => void;
 }
 
+const DealCardWithErrorBoundary = React.memo(({ deal, index, isLoading }: {
+  deal: Deal;
+  index: number;
+  isLoading: boolean;
+}) => (
+  <ErrorBoundary
+    fallback={
+      <div className="p-4 bg-red-50 border border-red-200 rounded-lg mb-3">
+        <p className="text-sm text-red-600">Error loading deal card</p>
+      </div>
+    }
+  >
+    <DealCard
+      deal={deal}
+      index={index}
+      isLoading={isLoading}
+    />
+  </ErrorBoundary>
+));
+
+DealCardWithErrorBoundary.displayName = 'DealCardWithErrorBoundary';
+
 const StageColumn = ({ stage, deals, dragLoading, onCreateDeal }: StageColumnProps) => {
   const getTotalValue = () => {
     return deals.reduce((sum, deal) => sum + deal.amount_requested, 0);
@@ -35,18 +59,20 @@ const StageColumn = ({ stage, deals, dragLoading, onCreateDeal }: StageColumnPro
   };
 
   // Sort deals by priority score and then by days in stage
-  const sortedDeals = sortDealsByPriority(deals);
-  const priorityStats = getPriorityStats();
+  const sortedDeals = React.useMemo(() => sortDealsByPriority(deals), [deals]);
+  const priorityStats = React.useMemo(() => getPriorityStats(), [deals]);
 
   return (
     <div className="flex flex-col h-full transition-all duration-200 hover:shadow-lg">
-      <StageHeader
-        stage={stage}
-        deals={deals}
-        priorityStats={priorityStats}
-        totalValue={getTotalValue()}
-        dragLoading={dragLoading}
-      />
+      <ErrorBoundary>
+        <StageHeader
+          stage={stage}
+          deals={deals}
+          priorityStats={priorityStats}
+          totalValue={getTotalValue()}
+          dragLoading={dragLoading}
+        />
+      </ErrorBoundary>
       
       <Droppable droppableId={stage.id}>
         {(provided, snapshot) => (
@@ -62,7 +88,7 @@ const StageColumn = ({ stage, deals, dragLoading, onCreateDeal }: StageColumnPro
             aria-label={`${stage.title} deals`}
           >
             {sortedDeals.map((deal, index) => (
-              <DealCard
+              <DealCardWithErrorBoundary
                 key={deal.id}
                 deal={deal}
                 index={index}
@@ -72,10 +98,12 @@ const StageColumn = ({ stage, deals, dragLoading, onCreateDeal }: StageColumnPro
             {provided.placeholder}
             
             {deals.length === 0 && (
-              <EmptyState
-                stageId={stage.id}
-                onCreateDeal={onCreateDeal}
-              />
+              <ErrorBoundary>
+                <EmptyState
+                  stageId={stage.id}
+                  onCreateDeal={onCreateDeal}
+                />
+              </ErrorBoundary>
             )}
           </div>
         )}
@@ -84,4 +112,4 @@ const StageColumn = ({ stage, deals, dragLoading, onCreateDeal }: StageColumnPro
   );
 };
 
-export default StageColumn;
+export default React.memo(StageColumn);
