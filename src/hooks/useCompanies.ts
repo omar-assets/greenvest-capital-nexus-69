@@ -51,6 +51,7 @@ export const useCompanies = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
+      queryClient.invalidateQueries({ queryKey: ['deals'] });
       toast({
         title: "Company Created",
         description: `${data.company_name} has been created successfully.`,
@@ -83,6 +84,7 @@ export const useCompanies = () => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['companies'] });
+      queryClient.invalidateQueries({ queryKey: ['deals'] });
       toast({
         title: "Company Updated",
         description: `${data.company_name} has been updated successfully.`,
@@ -101,7 +103,9 @@ export const useCompanies = () => {
   const findOrCreateCompany = async (companyName: string): Promise<Company> => {
     if (!user?.id) throw new Error('User not authenticated');
 
-    // First, try to find existing company
+    console.log('Finding or creating company:', companyName);
+
+    // First, try to find existing company with exact match
     const { data: existingCompany, error: findError } = await supabase
       .from('companies')
       .select('*')
@@ -110,10 +114,30 @@ export const useCompanies = () => {
       .single();
 
     if (existingCompany && !findError) {
+      console.log('Found existing company:', existingCompany.id);
+      
+      // Update any unlinked deals for this company
+      const { error: updateError } = await supabase
+        .from('deals')
+        .update({ 
+          company_id: existingCompany.id,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id)
+        .eq('company_name', companyName)
+        .is('company_id', null);
+
+      if (updateError) {
+        console.error('Error linking deals to existing company:', updateError);
+      } else {
+        console.log('Successfully linked unlinked deals to existing company');
+      }
+
       return existingCompany as Company;
     }
 
     // If not found, create new company
+    console.log('Creating new company for:', companyName);
     const { data: newCompany, error: createError } = await supabase
       .from('companies')
       .insert({
@@ -123,10 +147,33 @@ export const useCompanies = () => {
       .select()
       .single();
 
-    if (createError) throw createError;
+    if (createError) {
+      console.error('Error creating company:', createError);
+      throw createError;
+    }
+    
+    console.log('Created new company:', newCompany.id);
+
+    // Link any existing deals with this company name
+    const { error: linkError } = await supabase
+      .from('deals')
+      .update({ 
+        company_id: newCompany.id,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', user.id)
+      .eq('company_name', companyName)
+      .is('company_id', null);
+
+    if (linkError) {
+      console.error('Error linking deals to new company:', linkError);
+    } else {
+      console.log('Successfully linked deals to new company');
+    }
     
     // Invalidate queries to refresh the cache
     queryClient.invalidateQueries({ queryKey: ['companies'] });
+    queryClient.invalidateQueries({ queryKey: ['deals'] });
     
     return newCompany as Company;
   };
