@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,7 +12,7 @@ export const useScorecard = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const generateScorecard = useMutation({
+  const getScorecard = useMutation({
     mutationFn: async ({ 
       company_id, 
       deal_id, 
@@ -23,34 +22,8 @@ export const useScorecard = () => {
       deal_id?: string; 
       external_app_id: number; 
     }) => {
-      const { data, error } = await supabase.functions.invoke('generate-scorecard', {
-        body: { company_id, deal_id, external_app_id }
-      });
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['scorecards'] });
-      toast({
-        title: "Scorecard Generation Started",
-        description: "Your scorecard is being generated. You'll be notified when it's ready.",
-      });
-    },
-    onError: (error: any) => {
-      console.error('Error generating scorecard:', error);
-      toast({
-        title: "Generation Failed",
-        description: error.message || "Failed to start scorecard generation",
-        variant: "destructive",
-      });
-    },
-  });
-
-  const getScorecard = useMutation({
-    mutationFn: async ({ external_app_id }: { external_app_id: number }) => {
       const { data, error } = await supabase.functions.invoke('get-scorecard', {
-        body: { external_app_id }
+        body: { company_id, deal_id, external_app_id }
       });
 
       if (error) throw error;
@@ -64,10 +37,10 @@ export const useScorecard = () => {
       });
     },
     onError: (error: any) => {
-      console.error('Error getting scorecard:', error);
+      console.error('Error processing scorecard:', error);
       toast({
-        title: "Retrieval Failed",
-        description: error.message || "Failed to retrieve scorecard",
+        title: "Request Failed",
+        description: error.message || "Failed to process scorecard request",
         variant: "destructive",
       });
     },
@@ -125,8 +98,6 @@ export const useScorecard = () => {
   return {
     scorecards,
     isLoading,
-    generateScorecard: generateScorecard.mutate,
-    isGenerating: generateScorecard.isPending,
     getScorecard: getScorecard.mutate,
     isGettingScorecard: getScorecard.isPending,
     fetchScorecardById,

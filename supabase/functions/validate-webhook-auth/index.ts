@@ -46,8 +46,8 @@ serve(async (req) => {
 
     console.log('Starting webhook validation for user:', user.id);
 
-    // Get webhook credentials from environment
-    const webhookUrl = Deno.env.get('N8N_WEBHOOK_URL');
+    // Get webhook credentials from environment - using the consolidated webhook URL
+    const webhookUrl = Deno.env.get('N8N_GET_SCORECARD_WEBHOOK_URL');
     const username = Deno.env.get('N8N_BASIC_AUTH_USERNAME');
     const password = Deno.env.get('N8N_BASIC_AUTH_PASSWORD');
 

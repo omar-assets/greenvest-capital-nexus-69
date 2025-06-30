@@ -40,7 +40,7 @@ serve(async (req) => {
       )
     }
 
-    const { external_app_id } = await req.json()
+    const { company_id, deal_id, external_app_id } = await req.json()
 
     if (!external_app_id) {
       return new Response(
@@ -52,9 +52,9 @@ serve(async (req) => {
       )
     }
 
-    console.log(`Getting scorecard for app_id: ${external_app_id}`)
+    console.log(`Processing scorecard request for app_id: ${external_app_id}`)
 
-    // Call N8N webhook to get scorecard
+    // Get webhook configuration
     const webhookUrl = Deno.env.get('N8N_GET_SCORECARD_WEBHOOK_URL')
     const webhookUsername = Deno.env.get('N8N_BASIC_AUTH_USERNAME')
     const webhookPassword = Deno.env.get('N8N_BASIC_AUTH_PASSWORD')
@@ -70,7 +70,66 @@ serve(async (req) => {
       )
     }
 
+    console.log(`Using webhook URL: ${webhookUrl}`)
+
+    // Check if we already have this scorecard in our database
+    const { data: existingScorecard } = await supabaseClient
+      .from('scorecards')
+      .select('*')
+      .eq('external_app_id', external_app_id)
+      .eq('user_id', user.id)
+      .eq('status', 'completed')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (existingScorecard) {
+      console.log('Found existing scorecard in database')
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          scorecard_id: existingScorecard.id,
+          scorecard_url: existingScorecard.scorecard_url,
+          source: 'database'
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Create initial scorecard record
+    const { data: scorecard, error: scorecardError } = await supabaseClient
+      .from('scorecards')
+      .insert({
+        user_id: user.id,
+        company_id: company_id || null,
+        deal_id: deal_id || null,
+        external_app_id,
+        status: 'processing',
+        webhook_request_data: {
+          app_id: external_app_id,
+          requested_by: user.id,
+          timestamp: new Date().toISOString()
+        }
+      })
+      .select()
+      .single()
+
+    if (scorecardError) {
+      console.error('Error creating scorecard record:', scorecardError)
+      return new Response(
+        JSON.stringify({ error: 'Failed to create scorecard record' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
     try {
+      // Call N8N webhook
       const webhookResponse = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
@@ -79,7 +138,10 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           app_id: external_app_id,
+          scorecard_id: scorecard.id,
           user_id: user.id,
+          company_id: company_id || null,
+          deal_id: deal_id || null,
           action: 'get_scorecard'
         })
       })
@@ -89,10 +151,18 @@ serve(async (req) => {
       }
 
       const webhookData = await webhookResponse.json()
-      console.log('Get scorecard webhook response received:', { status: webhookResponse.status })
+      console.log('Webhook response received:', { status: webhookResponse.status })
 
-      // Check if scorecard exists
+      // Check if scorecard exists in API response
       if (!webhookData.scorecard) {
+        await supabaseClient
+          .from('scorecards')
+          .update({
+            status: 'error',
+            error_message: 'No scorecard found for this application'
+          })
+          .eq('id', scorecard.id)
+
         return new Response(
           JSON.stringify({ 
             error: 'No scorecard found for this application',
@@ -105,59 +175,7 @@ serve(async (req) => {
         )
       }
 
-      // Check if we already have this scorecard in our database
-      const { data: existingScorecard } = await supabaseClient
-        .from('scorecards')
-        .select('*')
-        .eq('external_app_id', external_app_id)
-        .eq('user_id', user.id)
-        .eq('status', 'completed')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
-
-      if (existingScorecard) {
-        console.log('Found existing scorecard in database')
-        return new Response(
-          JSON.stringify({ 
-            success: true,
-            scorecard_id: existingScorecard.id,
-            scorecard_url: existingScorecard.scorecard_url,
-            source: 'database'
-          }),
-          { 
-            status: 200, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        )
-      }
-
-      // Create new scorecard record with the fetched data
-      const { data: scorecard, error: scorecardError } = await supabaseClient
-        .from('scorecards')
-        .insert({
-          user_id: user.id,
-          external_app_id,
-          status: 'completed',
-          scorecard_url: webhookData.scorecard_url || null,
-          webhook_response_data: webhookData,
-          completed_at: new Date().toISOString()
-        })
-        .select()
-        .single()
-
-      if (scorecardError) {
-        console.error('Error creating scorecard record:', scorecardError)
-        return new Response(
-          JSON.stringify({ error: 'Failed to save scorecard data' }),
-          { 
-            status: 500, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        )
-      }
-
-      // Process and organize the scorecard data into sections
+      // Process and organize the webhook response data
       const sections = []
       
       if (webhookData.scorecard) {
@@ -243,6 +261,17 @@ serve(async (req) => {
         }
       }
 
+      // Update scorecard with response data and URL
+      await supabaseClient
+        .from('scorecards')
+        .update({
+          status: 'completed',
+          scorecard_url: webhookData.scorecard_url || null,
+          webhook_response_data: webhookData,
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', scorecard.id)
+
       // Insert organized sections
       if (sections.length > 0) {
         const { error: sectionsError } = await supabaseClient
@@ -276,9 +305,17 @@ serve(async (req) => {
     } catch (webhookError) {
       console.error('Webhook request failed:', webhookError)
       
+      await supabaseClient
+        .from('scorecards')
+        .update({
+          status: 'error',
+          error_message: webhookError.message
+        })
+        .eq('id', scorecard.id)
+
       return new Response(
         JSON.stringify({ 
-          error: 'Failed to retrieve scorecard',
+          error: 'Failed to process scorecard request',
           details: webhookError.message 
         }),
         { 

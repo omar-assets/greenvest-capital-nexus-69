@@ -1,14 +1,8 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { FileText, Loader, Download } from 'lucide-react';
+import { FileText, Loader } from 'lucide-react';
 import { useScorecard } from '@/hooks/useScorecard';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 
 interface GenerateScorecardButtonProps {
   company_id: string;
@@ -29,76 +23,45 @@ const GenerateScorecardButton = ({
   disabled = false,
   className = ''
 }: GenerateScorecardButtonProps) => {
-  const { generateScorecard, isGenerating, getScorecard, isGettingScorecard } = useScorecard();
+  const { getScorecard, isGettingScorecard } = useScorecard();
 
-  const handleGenerateScorecard = () => {
+  const handleGetScorecard = () => {
     if (!external_app_id) {
-      alert('No external app ID found for this company. Cannot generate scorecard.');
+      alert('No external app ID found for this company. Cannot process scorecard request.');
       return;
     }
 
-    generateScorecard({
+    getScorecard({
       company_id,
       deal_id,
       external_app_id
     });
   };
 
-  const handleGetScorecard = () => {
-    if (!external_app_id) {
-      alert('No external app ID found for this company. Cannot retrieve scorecard.');
-      return;
-    }
-
-    getScorecard({ external_app_id });
-  };
-
-  const isDisabled = disabled || isGenerating || isGettingScorecard || !external_app_id;
-  const isLoading = isGenerating || isGettingScorecard;
+  const isDisabled = disabled || isGettingScorecard || !external_app_id;
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant={variant}
-          size={size}
-          disabled={isDisabled}
-          className={`transition-all duration-200 hover:shadow-sm ${className}`}
-          title={
-            !external_app_id 
-              ? 'No app ID available - cannot access scorecard'
-              : isLoading 
-                ? 'Processing...'
-                : 'Scorecard options'
-          }
-        >
-          {isLoading ? (
-            <Loader className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <FileText className="h-4 w-4 mr-2" />
-          )}
-          {isGenerating ? 'Generating...' : isGettingScorecard ? 'Getting...' : 'Scorecard'}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="bg-white shadow-lg border">
-        <DropdownMenuItem 
-          onClick={handleGenerateScorecard} 
-          disabled={isDisabled}
-          className="hover:bg-muted/50 transition-colors"
-        >
-          <FileText className="h-4 w-4 mr-2" />
-          Generate New Scorecard
-        </DropdownMenuItem>
-        <DropdownMenuItem 
-          onClick={handleGetScorecard} 
-          disabled={isDisabled}
-          className="hover:bg-muted/50 transition-colors"
-        >
-          <Download className="h-4 w-4 mr-2" />
-          Get Existing Scorecard
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Button
+      variant={variant}
+      size={size}
+      disabled={isDisabled}
+      onClick={handleGetScorecard}
+      className={`transition-all duration-200 hover:shadow-sm ${className}`}
+      title={
+        !external_app_id 
+          ? 'No app ID available - cannot access scorecard'
+          : isGettingScorecard 
+            ? 'Processing...'
+            : 'Get scorecard for this application'
+      }
+    >
+      {isGettingScorecard ? (
+        <Loader className="h-4 w-4 mr-2 animate-spin" />
+      ) : (
+        <FileText className="h-4 w-4 mr-2" />
+      )}
+      {isGettingScorecard ? 'Processing...' : 'Get Scorecard'}
+    </Button>
   );
 };
 
