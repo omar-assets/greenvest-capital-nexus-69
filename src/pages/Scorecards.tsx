@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { FileText, Search, Eye, ExternalLink, Clock, CheckCircle, XCircle, Loader } from 'lucide-react';
 import { useScorecard } from '@/hooks/useScorecard';
 import { formatDistanceToNow } from 'date-fns';
+import React from 'react';
 
 const Scorecards = () => {
   const navigate = useNavigate();
@@ -51,6 +51,33 @@ const Scorecards = () => {
       </Badge>
     );
   };
+
+  const getStatusMessage = (scorecard: any) => {
+    switch (scorecard.status) {
+      case 'processing':
+        return 'Processing in progress...';
+      case 'completed':
+        return 'Ready to view';
+      case 'error':
+        return scorecard.error_message || 'Processing failed';
+      default:
+        return 'Pending';
+    }
+  };
+
+  // Auto-refresh every 5 seconds to show updated statuses
+  React.useEffect(() => {
+    const hasProcessingScorecard = scorecards.some(s => s.status === 'processing');
+    
+    if (hasProcessingScorecard) {
+      const interval = setInterval(() => {
+        // This will trigger a refetch through the query client
+        window.location.reload();
+      }, 5000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [scorecards]);
 
   if (isLoading) {
     return (
@@ -133,6 +160,7 @@ const Scorecards = () => {
                   <TableRow>
                     <TableHead>App ID</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Message</TableHead>
                     <TableHead>Generated</TableHead>
                     <TableHead>Completed</TableHead>
                     <TableHead>Actions</TableHead>
@@ -150,6 +178,11 @@ const Scorecards = () => {
                         {getStatusBadge(scorecard.status)}
                       </TableCell>
                       <TableCell>
+                        <div className="text-sm text-gray-600 max-w-xs truncate">
+                          {getStatusMessage(scorecard)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
                         <div className="text-sm text-gray-600">
                           {formatDistanceToNow(new Date(scorecard.requested_at))} ago
                         </div>
@@ -158,7 +191,7 @@ const Scorecards = () => {
                         <div className="text-sm text-gray-600">
                           {scorecard.completed_at 
                             ? formatDistanceToNow(new Date(scorecard.completed_at)) + ' ago'
-                            : '-'
+                            : scorecard.status === 'processing' ? 'In progress' : '-'
                           }
                         </div>
                       </TableCell>
@@ -184,6 +217,12 @@ const Scorecards = () => {
                             >
                               <ExternalLink className="h-3 w-3" />
                             </Button>
+                          )}
+                          {scorecard.status === 'processing' && (
+                            <div className="text-xs text-blue-600 flex items-center gap-1">
+                              <Loader className="h-3 w-3 animate-spin" />
+                              Processing...
+                            </div>
                           )}
                         </div>
                       </TableCell>

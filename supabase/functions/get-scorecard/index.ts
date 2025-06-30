@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -200,6 +199,35 @@ serve(async (req) => {
           success: true,
           scorecard_id: existingScorecard.id,
           scorecard_url: existingScorecard.scorecard_url,
+          status: 'completed',
+          source: 'database'
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Check for existing processing scorecard
+    const { data: processingScorecard } = await supabaseClient
+      .from('scorecards')
+      .select('*')
+      .eq('external_app_id', external_app_id)
+      .eq('user_id', user.id)
+      .eq('status', 'processing')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (processingScorecard) {
+      console.log('Found existing processing scorecard:', processingScorecard.id);
+      return new Response(
+        JSON.stringify({ 
+          success: true,
+          scorecard_id: processingScorecard.id,
+          status: 'processing',
+          message: 'Scorecard is currently being processed',
           source: 'database'
         }),
         { 
@@ -211,7 +239,7 @@ serve(async (req) => {
 
     console.log('No existing scorecard found, creating new record...');
 
-    // Create new scorecard record
+    // Create new scorecard record with processing status
     const { data: scorecard, error: scorecardError } = await supabaseClient
       .from('scorecards')
       .insert({
@@ -246,295 +274,252 @@ serve(async (req) => {
 
     console.log('Created scorecard record:', scorecard.id);
 
-    // Prepare webhook payload
-    const webhookPayload = {
-      app_id: external_app_id,
-      scorecard_id: scorecard.id,
-      user_id: user.id,
-      company_id: company_id || null,
-      deal_id: deal_id || null,
-      action: 'get_scorecard',
-      timestamp: new Date().toISOString()
-    };
-
-    console.log('Prepared webhook payload:', JSON.stringify(webhookPayload, null, 2));
-
-    // Prepare webhook headers
-    const webhookHeaders: Record<string, string> = {
-      'Content-Type': 'application/json',
-      'User-Agent': 'Supabase-Functions/2.0'
-    };
-
-    // Add authentication if configured
-    const useAuth = basicAuthUsername && basicAuthPassword;
-    if (useAuth) {
-      console.log('Adding Basic Authentication to webhook request');
-      const auth = btoa(`${basicAuthUsername}:${basicAuthPassword}`);
-      webhookHeaders['Authorization'] = `Basic ${auth}`;
-    } else {
-      console.log('No authentication configured for webhook request');
-    }
-
-    console.log('Webhook headers (auth hidden):', {
-      ...webhookHeaders,
-      Authorization: webhookHeaders.Authorization ? '[HIDDEN]' : undefined
-    });
-
-    try {
-      // Make webhook request with retry logic
-      console.log('=== Starting Webhook Request ===');
-      
-      const webhookResponse = await retryWithBackoff(
-        async () => {
-          console.log(`Making webhook request to: ${webhookUrl}`);
-          
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 60000); // Increased to 60 seconds
-          
-          try {
-            const response = await fetch(webhookUrl, {
-              method: 'POST',
-              headers: webhookHeaders,
-              body: JSON.stringify(webhookPayload),
-              signal: controller.signal
-            });
-            
-            clearTimeout(timeoutId);
-            console.log(`Webhook response status: ${response.status} ${response.statusText}`);
-            console.log('Webhook response headers:', Object.fromEntries(response.headers.entries()));
-            
-            if (!response.ok) {
-              const responseText = await response.text();
-              console.error(`Webhook failed with status ${response.status}:`, responseText);
-              throw new Error(`Webhook request failed: ${response.status} ${response.statusText}. Response: ${responseText}`);
-            }
-            
-            return response;
-          } catch (error) {
-            clearTimeout(timeoutId);
-            if (error.name === 'AbortError') {
-              throw new Error('Webhook request timed out after 60 seconds');
-            }
-            throw error;
-          }
-        },
-        3, // max attempts
-        2000, // base delay
-        'Webhook Request'
-      );
-
-      const webhookData = await webhookResponse.json();
-      console.log('Webhook response data:', JSON.stringify(webhookData, null, 2));
-
-      // Validate webhook response
-      if (!webhookData || typeof webhookData !== 'object') {
-        throw new Error('Invalid webhook response: Expected JSON object');
+    // Return immediate response with processing status
+    const immediateResponse = new Response(
+      JSON.stringify({ 
+        success: true, 
+        scorecard_id: scorecard.id,
+        status: 'processing',
+        message: 'Scorecard processing has started. Check back for updates.',
+        source: 'api'
+      }),
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
+    );
 
-      // Check if scorecard data exists in the correct structure
-      if (!webhookData.scorecardData || !Array.isArray(webhookData.scorecardData) || webhookData.scorecardData.length === 0) {
-        console.log('No scorecard data found in webhook response for app_id:', external_app_id);
+    // Start background processing
+    const backgroundTask = async () => {
+      try {
+        console.log('=== Starting Background Processing ===');
         
+        // Prepare webhook payload
+        const webhookPayload = {
+          app_id: external_app_id,
+          scorecard_id: scorecard.id,
+          user_id: user.id,
+          company_id: company_id || null,
+          deal_id: deal_id || null,
+          action: 'get_scorecard',
+          timestamp: new Date().toISOString()
+        };
+
+        console.log('Prepared webhook payload:', JSON.stringify(webhookPayload, null, 2));
+
+        // Prepare webhook headers
+        const webhookHeaders: Record<string, string> = {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Supabase-Functions/2.0'
+        };
+
+        // Add authentication if configured
+        const useAuth = basicAuthUsername && basicAuthPassword;
+        if (useAuth) {
+          console.log('Adding Basic Authentication to webhook request');
+          const auth = btoa(`${basicAuthUsername}:${basicAuthPassword}`);
+          webhookHeaders['Authorization'] = `Basic ${auth}`;
+        }
+
+        // Make webhook request with retry logic
+        const webhookResponse = await retryWithBackoff(
+          async () => {
+            console.log(`Making webhook request to: ${webhookUrl}`);
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 seconds timeout
+            
+            try {
+              const response = await fetch(webhookUrl, {
+                method: 'POST',
+                headers: webhookHeaders,
+                body: JSON.stringify(webhookPayload),
+                signal: controller.signal
+              });
+              
+              clearTimeout(timeoutId);
+              console.log(`Webhook response status: ${response.status} ${response.statusText}`);
+              
+              if (!response.ok) {
+                const responseText = await response.text();
+                console.error(`Webhook failed with status ${response.status}:`, responseText);
+                throw new Error(`Webhook request failed: ${response.status} ${response.statusText}`);
+              }
+              
+              return response;
+            } catch (error) {
+              clearTimeout(timeoutId);
+              if (error.name === 'AbortError') {
+                throw new Error('Webhook request timed out after 90 seconds');
+              }
+              throw error;
+            }
+          },
+          3,
+          2000,
+          'Webhook Request'
+        );
+
+        const webhookData = await webhookResponse.json();
+        console.log('Webhook response received, processing data...');
+
+        // Validate webhook response structure
+        if (!webhookData || typeof webhookData !== 'object') {
+          throw new Error('Invalid webhook response: Expected JSON object');
+        }
+
+        // Check for scorecard data in the response
+        if (!webhookData.scorecardData || !Array.isArray(webhookData.scorecardData) || webhookData.scorecardData.length === 0) {
+          console.log('No scorecard data found in webhook response');
+          
+          await supabaseClient
+            .from('scorecards')
+            .update({
+              status: 'error',
+              error_message: 'No scorecard data found for this application',
+              webhook_response_data: webhookData,
+              completed_at: new Date().toISOString()
+            })
+            .eq('id', scorecard.id);
+
+          return;
+        }
+
+        console.log('Processing scorecard data from webhook...');
+
+        // Extract the scorecard data and URL with validation
+        const scorecardItem = webhookData.scorecardData[0];
+        const scorecardUrl = scorecardItem.url || null;
+        const scorecardBodyData = scorecardItem.body || {};
+
+        // Validate app_id in the URL if possible
+        if (scorecardUrl && scorecardUrl.includes('appid=')) {
+          const urlAppId = scorecardUrl.match(/appid=(\d+)/)?.[1];
+          if (urlAppId && parseInt(urlAppId) !== external_app_id) {
+            console.warn(`URL app_id (${urlAppId}) doesn't match requested app_id (${external_app_id})`);
+          }
+        }
+
+        console.log('Scorecard URL:', scorecardUrl);
+        console.log('Scorecard body data keys:', Object.keys(scorecardBodyData));
+
+        // Process and organize the webhook response data
+        const sections = [];
+
+        // Add sections based on available data
+        const sectionMappings = [
+          { key: 'metrics', name: 'metrics', order: 1 },
+          { key: 'dailybalance', name: 'daily_balances', order: 2 },
+          { key: 'credittrans', name: 'credit_transactions', order: 3 },
+          { key: 'debittrans', name: 'debit_transactions', order: 4 },
+          { key: 'nsftrans', name: 'nsf_transactions', order: 5 },
+          { key: 'largetrans', name: 'large_transactions', order: 6 },
+          { key: 'transfertrans', name: 'transfer_transactions', order: 7 },
+          { key: 'mcatrans', name: 'mca_transactions', order: 8 }
+        ];
+
+        sectionMappings.forEach(mapping => {
+          if (scorecardBodyData[mapping.key]) {
+            sections.push({
+              section_name: mapping.name,
+              section_data: scorecardBodyData[mapping.key],
+              display_order: mapping.order
+            });
+          }
+        });
+
+        // Add any additional sections not in the mapping
+        const processedKeys = sectionMappings.map(m => m.key);
+        let orderCounter = 9;
+        
+        Object.keys(scorecardBodyData).forEach(key => {
+          if (!processedKeys.includes(key) && scorecardBodyData[key]) {
+            sections.push({
+              section_name: key,
+              section_data: scorecardBodyData[key],
+              display_order: orderCounter++
+            });
+          }
+        });
+
+        console.log(`Prepared ${sections.length} scorecard sections for insertion`);
+
+        // Use a transaction to update scorecard and insert sections
+        const { error: updateError } = await supabaseClient
+          .from('scorecards')
+          .update({
+            status: 'completed',
+            scorecard_url: scorecardUrl,
+            webhook_response_data: webhookData,
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', scorecard.id);
+
+        if (updateError) {
+          console.error('Error updating scorecard:', updateError);
+          throw new Error(`Failed to update scorecard: ${updateError.message}`);
+        }
+
+        // Insert organized sections
+        if (sections.length > 0) {
+          const sectionsToInsert = sections.map(section => ({
+            scorecard_id: scorecard.id,
+            ...section
+          }));
+
+          const { error: sectionsError } = await supabaseClient
+            .from('scorecard_sections')
+            .insert(sectionsToInsert);
+
+          if (sectionsError) {
+            console.error('Error inserting scorecard sections:', sectionsError);
+            
+            // Rollback scorecard status to error
+            await supabaseClient
+              .from('scorecards')
+              .update({
+                status: 'error',
+                error_message: `Failed to save sections: ${sectionsError.message}`
+              })
+              .eq('id', scorecard.id);
+              
+            throw new Error(`Failed to save scorecard sections: ${sectionsError.message}`);
+          } else {
+            console.log(`Successfully inserted ${sections.length} scorecard sections`);
+          }
+        }
+
+        console.log('=== Background Processing Completed Successfully ===');
+        
+      } catch (webhookError) {
+        console.error('=== Background Processing Failed ===');
+        console.error('Error details:', webhookError);
+        
+        // Update scorecard with error status
         await supabaseClient
           .from('scorecards')
           .update({
             status: 'error',
-            error_message: 'No scorecard data found for this application',
-            webhook_response_data: webhookData
+            error_message: webhookError.message,
+            webhook_response_data: {
+              error: webhookError.message,
+              timestamp: new Date().toISOString()
+            },
+            completed_at: new Date().toISOString()
           })
-          .eq('id', scorecard.id)
-
-        return new Response(
-          JSON.stringify({ 
-            error: 'No scorecard data found for this application',
-            app_id: external_app_id,
-            webhook_response: webhookData
-          }),
-          { 
-            status: 404, 
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-          }
-        )
+          .eq('id', scorecard.id);
       }
+    };
 
-      console.log('Processing scorecard data from webhook...');
-
-      // Extract the scorecard data and URL
-      const scorecardItem = webhookData.scorecardData[0];
-      const scorecardUrl = scorecardItem.url || null;
-      const scorecardBodyData = scorecardItem.body || {};
-
-      console.log('Scorecard URL:', scorecardUrl);
-      console.log('Scorecard body data keys:', Object.keys(scorecardBodyData));
-
-      // Process and organize the webhook response data
-      const sections = []
-
-      // Metrics section
-      if (scorecardBodyData.metrics && scorecardBodyData.metrics.metricdata) {
-        sections.push({
-          section_name: 'metrics',
-          section_data: scorecardBodyData.metrics,
-          display_order: 1
-        })
-      }
-
-      // Daily balances section
-      if (scorecardBodyData.dailybalance) {
-        sections.push({
-          section_name: 'daily_balances',
-          section_data: scorecardBodyData.dailybalance,
-          display_order: 2
-        })
-      }
-
-      // Credit transactions
-      if (scorecardBodyData.credittrans) {
-        sections.push({
-          section_name: 'credit_transactions',
-          section_data: scorecardBodyData.credittrans,
-          display_order: 3
-        })
-      }
-
-      // Debit transactions
-      if (scorecardBodyData.debittrans) {
-        sections.push({
-          section_name: 'debit_transactions',
-          section_data: scorecardBodyData.debittrans,
-          display_order: 4
-        })
-      }
-
-      // NSF transactions
-      if (scorecardBodyData.nsftrans) {
-        sections.push({
-          section_name: 'nsf_transactions',
-          section_data: scorecardBodyData.nsftrans,
-          display_order: 5
-        })
-      }
-
-      // Large transactions
-      if (scorecardBodyData.largetrans) {
-        sections.push({
-          section_name: 'large_transactions',
-          section_data: scorecardBodyData.largetrans,
-          display_order: 6
-        })
-      }
-
-      // Transfer transactions
-      if (scorecardBodyData.transfertrans) {
-        sections.push({
-          section_name: 'transfer_transactions',
-          section_data: scorecardBodyData.transfertrans,
-          display_order: 7
-        })
-      }
-
-      // MCA transactions
-      if (scorecardBodyData.mcatrans) {
-        sections.push({
-          section_name: 'mca_transactions',
-          section_data: scorecardBodyData.mcatrans,
-          display_order: 8
-        })
-      }
-
-      // Add any other data sections that might exist
-      const processedSections = ['metrics', 'dailybalance', 'credittrans', 'debittrans', 'nsftrans', 'largetrans', 'transfertrans', 'mcatrans'];
-      let orderCounter = 9;
-      
-      Object.keys(scorecardBodyData).forEach(key => {
-        if (!processedSections.includes(key) && scorecardBodyData[key]) {
-          sections.push({
-            section_name: key,
-            section_data: scorecardBodyData[key],
-            display_order: orderCounter++
-          })
-        }
-      });
-
-      console.log(`Processed ${sections.length} scorecard sections`);
-
-      // Update scorecard with completion data
-      await supabaseClient
-        .from('scorecards')
-        .update({
-          status: 'completed',
-          scorecard_url: scorecardUrl,
-          webhook_response_data: webhookData,
-          completed_at: new Date().toISOString()
-        })
-        .eq('id', scorecard.id)
-
-      // Insert organized sections
-      if (sections.length > 0) {
-        const { error: sectionsError } = await supabaseClient
-          .from('scorecard_sections')
-          .insert(
-            sections.map(section => ({
-              scorecard_id: scorecard.id,
-              ...section
-            }))
-          )
-
-        if (sectionsError) {
-          console.error('Error inserting scorecard sections:', sectionsError)
-        } else {
-          console.log(`Successfully inserted ${sections.length} scorecard sections`)
-        }
-      }
-
-      console.log('=== Scorecard Processing Completed Successfully ===');
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          scorecard_id: scorecard.id,
-          scorecard_url: scorecardUrl,
-          sections_created: sections.length,
-          source: 'api'
-        }),
-        { 
-          status: 200, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
-
-    } catch (webhookError) {
-      console.error('=== Webhook Request Failed ===');
-      console.error('Error details:', webhookError);
-      
-      // Update scorecard with error status
-      await supabaseClient
-        .from('scorecards')
-        .update({
-          status: 'error',
-          error_message: webhookError.message,
-          webhook_response_data: {
-            error: webhookError.message,
-            timestamp: new Date().toISOString()
-          }
-        })
-        .eq('id', scorecard.id)
-
-      return new Response(
-        JSON.stringify({ 
-          error: 'Failed to process scorecard request',
-          details: webhookError.message,
-          webhook_url: webhookUrl,
-          troubleshooting: {
-            step: 'webhook_request',
-            suggestion: 'Check if N8N workflow is active and URL is correct'
-          }
-        }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      )
+    // Start background task using EdgeRuntime.waitUntil if available
+    if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime.waitUntil) {
+      EdgeRuntime.waitUntil(backgroundTask());
+    } else {
+      // Fallback for local development
+      backgroundTask().catch(console.error);
     }
+
+    return immediateResponse;
 
   } catch (error) {
     console.error('=== Function Error ===');
