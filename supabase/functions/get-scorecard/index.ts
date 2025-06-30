@@ -31,6 +31,7 @@ serve(async (req) => {
     } = await supabaseClient.auth.getUser()
 
     if (userError || !user) {
+      console.error('Authentication error:', userError)
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { 
@@ -43,6 +44,7 @@ serve(async (req) => {
     const { company_id, deal_id, external_app_id } = await req.json()
 
     if (!external_app_id) {
+      console.error('Missing external_app_id in request')
       return new Response(
         JSON.stringify({ error: 'Missing required field: external_app_id' }),
         { 
@@ -56,13 +58,30 @@ serve(async (req) => {
 
     // Get webhook configuration
     const webhookUrl = Deno.env.get('N8N_GET_SCORECARD_WEBHOOK_URL')
-    const webhookUsername = Deno.env.get('N8N_BASIC_AUTH_USERNAME')
-    const webhookPassword = Deno.env.get('N8N_BASIC_AUTH_PASSWORD')
 
-    if (!webhookUrl || !webhookUsername || !webhookPassword) {
-      console.error('Missing N8N webhook configuration')
+    if (!webhookUrl) {
+      console.error('Missing N8N_GET_SCORECARD_WEBHOOK_URL environment variable')
       return new Response(
         JSON.stringify({ error: 'Webhook configuration not found' }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
+    // Validate webhook URL format
+    let validatedUrl;
+    try {
+      validatedUrl = new URL(webhookUrl);
+      console.log(`Validated webhook URL: ${validatedUrl.toString()}`);
+    } catch (error) {
+      console.error('Invalid webhook URL format:', error);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid webhook URL configuration',
+          details: error.message 
+        }),
         { 
           status: 500, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -129,32 +148,47 @@ serve(async (req) => {
     }
 
     try {
-      // Call N8N webhook
+      // Prepare webhook payload
+      const webhookPayload = {
+        app_id: external_app_id,
+        scorecard_id: scorecard.id,
+        user_id: user.id,
+        company_id: company_id || null,
+        deal_id: deal_id || null,
+        action: 'get_scorecard'
+      };
+
+      console.log('Webhook payload:', JSON.stringify(webhookPayload, null, 2));
+
+      // Call N8N webhook without authentication (as requested)
+      console.log(`Making webhook request to: ${webhookUrl}`);
+      
       const webhookResponse = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Basic ${btoa(`${webhookUsername}:${webhookPassword}`)}`
+          'User-Agent': 'Supabase-Functions/1.0'
         },
-        body: JSON.stringify({
-          app_id: external_app_id,
-          scorecard_id: scorecard.id,
-          user_id: user.id,
-          company_id: company_id || null,
-          deal_id: deal_id || null,
-          action: 'get_scorecard'
-        })
+        body: JSON.stringify(webhookPayload)
       })
 
+      console.log(`Webhook response status: ${webhookResponse.status} ${webhookResponse.statusText}`);
+      console.log(`Webhook response headers:`, Object.fromEntries(webhookResponse.headers.entries()));
+
       if (!webhookResponse.ok) {
-        throw new Error(`Webhook request failed: ${webhookResponse.status} ${webhookResponse.statusText}`)
+        const responseText = await webhookResponse.text();
+        console.error(`Webhook request failed with status ${webhookResponse.status}:`, responseText);
+        
+        throw new Error(`Webhook request failed: ${webhookResponse.status} ${webhookResponse.statusText}. Response: ${responseText}`);
       }
 
       const webhookData = await webhookResponse.json()
-      console.log('Webhook response received:', { status: webhookResponse.status })
+      console.log('Webhook response received:', JSON.stringify(webhookData, null, 2));
 
       // Check if scorecard exists in API response
       if (!webhookData.scorecard) {
+        console.log('No scorecard found in webhook response for app_id:', external_app_id);
+        
         await supabaseClient
           .from('scorecards')
           .update({
@@ -285,9 +319,12 @@ serve(async (req) => {
 
         if (sectionsError) {
           console.error('Error inserting scorecard sections:', sectionsError)
+        } else {
+          console.log(`Successfully inserted ${sections.length} scorecard sections`)
         }
       }
 
+      console.log('Scorecard processing completed successfully')
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -316,7 +353,8 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           error: 'Failed to process scorecard request',
-          details: webhookError.message 
+          details: webhookError.message,
+          webhook_url: webhookUrl
         }),
         { 
           status: 500, 
@@ -328,7 +366,10 @@ serve(async (req) => {
   } catch (error) {
     console.error('Function error:', error)
     return new Response(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ 
+        error: 'Internal server error',
+        details: error.message 
+      }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
