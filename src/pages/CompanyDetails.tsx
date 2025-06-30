@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,8 +45,8 @@ const CompanyDetails = () => {
   if (isCompaniesLoading || isDealsLoading || isContactsLoading) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <div className="h-8 w-64 bg-slate-200 rounded animate-pulse"></div>
-        <div className="h-96 bg-slate-50 rounded-lg animate-pulse"></div>
+        <div className="h-8 w-64 bg-muted rounded animate-pulse"></div>
+        <div className="h-96 bg-muted/50 rounded-lg animate-pulse"></div>
       </div>
     );
   }
@@ -53,8 +54,8 @@ const CompanyDetails = () => {
   if (!company) {
     return (
       <div className="text-center py-12">
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Company not found</h3>
-        <p className="text-gray-500 mb-4">The requested company could not be found.</p>
+        <h3 className="text-lg font-medium text-foreground mb-2">Company not found</h3>
+        <p className="text-muted-foreground mb-4">The requested company could not be found.</p>
         <Button onClick={() => navigate('/companies')}>
           Back to Companies
         </Button>
@@ -79,7 +80,7 @@ const CompanyDetails = () => {
             Back to Companies
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">{company.company_name}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{company.company_name}</h1>
             {company.dba_name && (
               <p className="text-muted-foreground">DBA: {company.dba_name}</p>
             )}
@@ -108,34 +109,34 @@ const CompanyDetails = () => {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <div className="text-sm font-medium text-gray-600">Company Name</div>
-              <div className="text-gray-800">{company.company_name}</div>
+              <div className="text-sm font-medium text-muted-foreground">Company Name</div>
+              <div className="text-foreground">{company.company_name}</div>
             </div>
             <div>
-              <div className="text-sm font-medium text-gray-600">DBA Name</div>
-              <div className="text-gray-800">{company.dba_name || 'N/A'}</div>
+              <div className="text-sm font-medium text-muted-foreground">DBA Name</div>
+              <div className="text-foreground">{company.dba_name || 'N/A'}</div>
             </div>
             <div>
-              <div className="text-sm font-medium text-gray-600">Industry</div>
-              <div className="text-gray-800">{company.industry || 'N/A'}</div>
+              <div className="text-sm font-medium text-muted-foreground">Industry</div>
+              <div className="text-foreground">{company.industry || 'N/A'}</div>
             </div>
             <div>
-              <div className="text-sm font-medium text-gray-600">Years in Business</div>
-              <div className="text-gray-800">{company.years_in_business || 'N/A'}</div>
+              <div className="text-sm font-medium text-muted-foreground">Years in Business</div>
+              <div className="text-foreground">{company.years_in_business || 'N/A'}</div>
             </div>
             <div>
-              <div className="text-sm font-medium text-gray-600">Address</div>
-              <div className="text-gray-800">
+              <div className="text-sm font-medium text-muted-foreground">Address</div>
+              <div className="text-foreground">
                 {company.address_line1}, {company.city}, {company.state}, {company.zip_code}
               </div>
             </div>
             <div>
-              <div className="text-sm font-medium text-gray-600">External App ID</div>
-              <div className="text-gray-800">{company.external_app_id || 'N/A'}</div>
+              <div className="text-sm font-medium text-muted-foreground">External App ID</div>
+              <div className="text-foreground">{company.external_app_id || 'N/A'}</div>
             </div>
             <div>
-              <div className="text-sm font-medium text-gray-600">External App Number</div>
-              <div className="text-gray-800">{company.external_app_number || 'N/A'}</div>
+              <div className="text-sm font-medium text-muted-foreground">External App Number</div>
+              <div className="text-foreground">{company.external_app_number || 'N/A'}</div>
             </div>
           </div>
         </CardContent>
@@ -158,7 +159,7 @@ const CompanyDetails = () => {
               ))}
             </ul>
           ) : (
-            <p>No deals associated with this company.</p>
+            <p className="text-muted-foreground">No deals associated with this company.</p>
           )}
         </CardContent>
       </Card>
@@ -173,15 +174,15 @@ const CompanyDetails = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {companyContacts.map((contact) => (
                 <div key={contact.id} className="border rounded-md p-4">
-                  <div className="font-medium">{contact.contact_name}</div>
-                  <div className="text-sm text-gray-500">{contact.title}</div>
-                  <div className="text-sm text-gray-500">{contact.email}</div>
-                  <div className="text-sm text-gray-500">{contact.phone}</div>
+                  <div className="font-medium text-foreground">{contact.contact_name}</div>
+                  <div className="text-sm text-muted-foreground">{contact.title}</div>
+                  <div className="text-sm text-muted-foreground">{contact.email}</div>
+                  <div className="text-sm text-muted-foreground">{contact.phone}</div>
                 </div>
               ))}
             </div>
           ) : (
-            <p>No contacts associated with this company.</p>
+            <p className="text-muted-foreground">No contacts associated with this company.</p>
           )}
         </CardContent>
       </Card>
