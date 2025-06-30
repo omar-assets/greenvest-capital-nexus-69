@@ -4,7 +4,6 @@ Building a Merchant Cash Advance (MCA) CRM system that replicates Dragin.io func
 ## Technical Architecture
 - **Frontend**: Lovable.dev (React + Tailwind CSS)
 - **Backend**: Supabase (PostgreSQL database, Auth, Storage, Edge Functions)
-- **OCR**: MoneyThumb API 1.5 (PDF Insights) integrated directly via Supabase Edge Functions
 - **File Storage**: Supabase Storage for documents
 - **Authentication**: Supabase Auth with email/password
 
@@ -24,15 +23,6 @@ Building a Merchant Cash Advance (MCA) CRM system that replicates Dragin.io func
 - **Activity Tracking**: Complete audit trail of all deal activities
 - **ISO Portal**: Broker-specific views and commission tracking
 
-## MoneyThumb API Integration
-- **API Version**: PDF Insights v1.5
-- **Authentication**: Bearer token via header
-- **Key Features**: 
-  - 99% accuracy on bank statements
-  - Fraud detection (Thumbprint scores)
-  - Automatic reconciliation
-  - Financial scorecard generation
-  - Creditworthiness scoring (1-100)
 
 ## Database Design Principles
 - Let Supabase create tables incrementally as features are added
