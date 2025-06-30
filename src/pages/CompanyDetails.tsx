@@ -9,6 +9,9 @@ import { useCompany } from '@/hooks/useCompanies';
 import { useDeals } from '@/hooks/useDeals';
 import { formatCurrency, formatDate } from '@/utils/formatters';
 import EditCompanyModal from '@/components/companies/EditCompanyModal';
+import ApplicationInfoCard from '@/components/companies/ApplicationInfoCard';
+import FinancialSummaryCard from '@/components/companies/FinancialSummaryCard';
+import WebhookDataCard from '@/components/companies/WebhookDataCard';
 import { useState } from 'react';
 
 const CompanyDetails = () => {
@@ -88,7 +91,14 @@ const CompanyDetails = () => {
             Back to Companies
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{company.company_name}</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-foreground">{company.company_name}</h1>
+              {company.external_app_number && (
+                <Badge variant="secondary" className="font-mono">
+                  {company.external_app_number}
+                </Badge>
+              )}
+            </div>
             {company.dba_name && (
               <p className="text-muted-foreground">DBA: {company.dba_name}</p>
             )}
@@ -107,8 +117,9 @@ const CompanyDetails = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Company Information */}
-        <div className="lg:col-span-1">
+        {/* Left Column - Company Information */}
+        <div className="lg:col-span-1 space-y-6">
+          {/* Basic Company Information */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -151,10 +162,20 @@ const CompanyDetails = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Application Information */}
+          <ApplicationInfoCard company={company} />
+
+          {/* Financial Summary */}
+          <FinancialSummaryCard company={company} />
         </div>
 
-        {/* Deals */}
-        <div className="lg:col-span-2">
+        {/* Right Column - Deals and Webhook Data */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Webhook Data */}
+          <WebhookDataCard company={company} />
+
+          {/* Deals */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
