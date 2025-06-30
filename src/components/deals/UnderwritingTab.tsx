@@ -42,7 +42,7 @@ const UnderwritingTab = ({ deal }: UnderwritingTabProps) => {
   const { checklist, updateChecklist, isUpdating } = useUnderwritingChecklist(deal.id);
   const { makeDecision, isProcessing } = useUnderwritingDecision(deal.id);
   const { documents } = useDealDocuments(deal.id);
-  const { data: companies } = useCompanies();
+  const { companies } = useCompanies();
 
   // Find company data for business age
   const company = companies?.find(c => c.id === deal.company_id);
