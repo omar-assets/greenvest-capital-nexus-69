@@ -43,12 +43,12 @@ const DealDocuments = ({ dealId }: DealDocumentsProps) => {
   const handleDownload = async (document: DealDocument) => {
     try {
       const url = await getDownloadUrl(document.file_path);
-      const link = document.createElement('a');
+      const link = window.document.createElement('a');
       link.href = url;
       link.download = document.original_filename;
-      document.body.appendChild(link);
+      window.document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      window.document.body.removeChild(link);
     } catch (error) {
       toast({
         title: "Error",
@@ -66,10 +66,8 @@ const DealDocuments = ({ dealId }: DealDocumentsProps) => {
     });
   };
 
-  const handleUpload = (files: File[], category: string) => {
-    files.forEach(file => {
-      uploadDocument({ file, category });
-    });
+  const handleUpload = ({ file, category, onProgress }: { file: File; category: string; onProgress?: (progress: number) => void }) => {
+    uploadDocument({ file, category, onProgress });
   };
 
   if (isLoading) {
