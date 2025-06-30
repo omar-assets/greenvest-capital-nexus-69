@@ -1,5 +1,5 @@
 
-import { OffersTab } from './OffersTab';
+import OffersTab from './OffersTab';
 
 interface DealOffersProps {
   dealId: string;

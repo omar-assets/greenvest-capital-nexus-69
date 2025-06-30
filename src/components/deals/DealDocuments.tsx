@@ -1,5 +1,5 @@
 
-import { DocumentGrid } from './DocumentGrid';
+import DocumentGrid from './DocumentGrid';
 
 interface DealDocumentsProps {
   dealId: string;

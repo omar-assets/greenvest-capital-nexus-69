@@ -47,6 +47,32 @@ export const useScorecard = () => {
     },
   });
 
+  const getScorecard = useMutation({
+    mutationFn: async ({ external_app_id }: { external_app_id: number }) => {
+      const { data, error } = await supabase.functions.invoke('get-scorecard', {
+        body: { external_app_id }
+      });
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['scorecards'] });
+      toast({
+        title: "Scorecard Retrieved",
+        description: `Scorecard successfully retrieved from ${data.source === 'database' ? 'database' : 'API'}.`,
+      });
+    },
+    onError: (error: any) => {
+      console.error('Error getting scorecard:', error);
+      toast({
+        title: "Retrieval Failed",
+        description: error.message || "Failed to retrieve scorecard",
+        variant: "destructive",
+      });
+    },
+  });
+
   const fetchScorecards = async (): Promise<Scorecard[]> => {
     if (!user?.id) return [];
     
@@ -101,6 +127,8 @@ export const useScorecard = () => {
     isLoading,
     generateScorecard: generateScorecard.mutate,
     isGenerating: generateScorecard.isPending,
+    getScorecard: getScorecard.mutate,
+    isGettingScorecard: getScorecard.isPending,
     fetchScorecardById,
     fetchScorecardSections,
   };

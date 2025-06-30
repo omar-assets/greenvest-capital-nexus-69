@@ -1,5 +1,5 @@
 
-import { ActivityTimeline } from './ActivityTimeline';
+import ActivityTimeline from './ActivityTimeline';
 
 interface DealActivitiesProps {
   dealId: string;

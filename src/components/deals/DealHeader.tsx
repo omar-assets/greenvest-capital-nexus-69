@@ -1,11 +1,10 @@
-
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/utils/formatters';
 import type { Database } from '@/integrations/supabase/types';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Edit } from 'lucide-react';
-import { StageProgressIndicator } from './StageProgressIndicator';
-import { DealActionButtons } from './DealActionButtons';
+import StageProgressIndicator from './StageProgressIndicator';
+import DealActionButtons from './DealActionButtons';
 
 type Deal = Database['public']['Tables']['deals']['Row'];
 
