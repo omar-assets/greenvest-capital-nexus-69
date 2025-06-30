@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -183,19 +182,19 @@ export const useCompanies = () => {
     mutationFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
 
-      console.log('Starting webhook sync...');
+      console.log('Starting apps webhook sync...');
       const { data, error } = await supabase.functions.invoke('sync-applications');
       
       if (error) {
-        console.error('Webhook sync error:', error);
+        console.error('Apps webhook sync error:', error);
         throw error;
       }
 
-      console.log('Webhook sync response:', data);
+      console.log('Apps webhook sync response:', data);
       return data;
     },
     onSuccess: async (data) => {
-      console.log('Webhook sync completed successfully');
+      console.log('Apps webhook sync completed successfully');
       
       // Force invalidate and refetch all related queries
       await queryClient.invalidateQueries({ queryKey: ['companies'] });
@@ -207,8 +206,17 @@ export const useCompanies = () => {
       
       if (data.validationError) {
         toast({
-          title: "Webhook Validation Failed",
-          description: data.details || "Please validate your webhook configuration first.",
+          title: "Apps Webhook Validation Failed",
+          description: data.details || "Please validate your apps webhook configuration first.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (data.configurationError) {
+        toast({
+          title: "Configuration Error",
+          description: data.error || "Missing N8N_WEBHOOK_URL configuration for apps sync.",
           variant: "destructive"
         });
         return;
@@ -242,10 +250,10 @@ export const useCompanies = () => {
       }
     },
     onError: (error) => {
-      console.error('Error during webhook sync:', error);
+      console.error('Error during apps webhook sync:', error);
       toast({
         title: "Sync Error",
-        description: "Failed to sync applications from webhook. Please try again.",
+        description: "Failed to sync applications from apps webhook. Please try again.",
         variant: "destructive"
       });
     },

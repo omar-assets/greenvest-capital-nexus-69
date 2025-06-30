@@ -53,17 +53,17 @@ serve(async (req) => {
 
     console.log('Starting webhook sync for user:', user.id);
 
-    // Check environment variables first
-    const webhookUrl = Deno.env.get('N8N_GET_SCORECARD_WEBHOOK_URL');
+    // Use the correct webhook URL for syncing applications (not scorecard)
+    const webhookUrl = Deno.env.get('N8N_WEBHOOK_URL');
     const username = Deno.env.get('N8N_BASIC_AUTH_USERNAME');
     const password = Deno.env.get('N8N_BASIC_AUTH_PASSWORD');
 
     if (!webhookUrl || !username || !password) {
-      console.error('Missing required environment variables');
+      console.error('Missing required environment variables for app sync');
       return new Response(JSON.stringify({ 
-        error: 'Configuration error: Missing webhook credentials',
+        error: 'Configuration error: Missing webhook credentials for app sync',
         details: {
-          webhookUrl: webhookUrl ? 'SET' : 'MISSING',
+          webhookUrl: webhookUrl ? 'SET' : 'MISSING (N8N_WEBHOOK_URL)',
           username: username ? 'SET' : 'MISSING',
           password: password ? 'SET' : 'MISSING'
         },
@@ -74,31 +74,26 @@ serve(async (req) => {
       });
     }
 
-    // Validate webhook connectivity first
-    console.log('Validating webhook connectivity...');
+    // Simple connectivity test for the apps webhook
+    console.log('Testing apps webhook connectivity:', webhookUrl);
+    const basicAuth = btoa(`${username}:${password}`);
+    
     try {
-      const validationResponse = await supabaseClient.functions.invoke('validate-webhook-auth');
-      
-      if (validationResponse.error) {
-        console.error('Webhook validation failed:', validationResponse.error);
-        return new Response(JSON.stringify({ 
-          error: 'Webhook validation failed',
-          details: validationResponse.error.message,
-          validationError: true
-        }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
+      const testResponse = await fetch(webhookUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Basic ${basicAuth}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-      const validation = validationResponse.data;
-      if (!validation.success) {
-        console.error('Webhook validation unsuccessful:', validation);
+      if (!testResponse.ok) {
+        console.error('Apps webhook connectivity test failed:', testResponse.status, testResponse.statusText);
         return new Response(JSON.stringify({ 
-          error: 'Webhook validation failed',
-          details: validation.error,
-          status: validation.status,
-          webhookUrl: validation.webhookUrl,
+          error: 'Apps webhook connectivity failed',
+          status: testResponse.status,
+          statusText: testResponse.statusText,
+          webhookUrl,
           validationError: true
         }), {
           status: 400,
@@ -106,12 +101,13 @@ serve(async (req) => {
         });
       }
 
-      console.log('Webhook validation successful, proceeding with sync...');
-    } catch (validationError) {
-      console.error('Error during webhook validation:', validationError);
+      console.log('Apps webhook connectivity test successful');
+    } catch (connectivityError) {
+      console.error('Error testing apps webhook connectivity:', connectivityError);
       return new Response(JSON.stringify({ 
-        error: 'Failed to validate webhook',
-        details: validationError.message,
+        error: 'Failed to connect to apps webhook',
+        details: connectivityError.message,
+        webhookUrl,
         validationError: true
       }), {
         status: 500,
@@ -119,9 +115,8 @@ serve(async (req) => {
       });
     }
 
-    // Make authenticated request to n8n webhook
-    const basicAuth = btoa(`${username}:${password}`);
-    console.log('Calling webhook for data:', webhookUrl);
+    // Make authenticated request to n8n webhook for apps
+    console.log('Calling apps webhook for data:', webhookUrl);
 
     let webhookResponse;
     try {
@@ -133,9 +128,9 @@ serve(async (req) => {
         },
       });
     } catch (fetchError) {
-      console.error('Network error calling webhook:', fetchError);
+      console.error('Network error calling apps webhook:', fetchError);
       return new Response(JSON.stringify({ 
-        error: 'Network error calling webhook',
+        error: 'Network error calling apps webhook',
         details: fetchError.message,
         webhookUrl
       }), {
@@ -145,12 +140,12 @@ serve(async (req) => {
     }
 
     if (!webhookResponse.ok) {
-      console.error('Webhook request failed:', webhookResponse.status, webhookResponse.statusText);
+      console.error('Apps webhook request failed:', webhookResponse.status, webhookResponse.statusText);
       const errorText = await webhookResponse.text();
       console.error('Error response:', errorText);
       
       return new Response(JSON.stringify({ 
-        error: 'Failed to fetch applications from webhook',
+        error: 'Failed to fetch applications from apps webhook',
         status: webhookResponse.status,
         statusText: webhookResponse.statusText,
         details: errorText,
@@ -162,15 +157,15 @@ serve(async (req) => {
     }
 
     const responseText = await webhookResponse.text();
-    console.log('Raw webhook response length:', responseText.length);
+    console.log('Raw apps webhook response length:', responseText.length);
 
     let applications: WebhookApplication[];
     try {
       applications = JSON.parse(responseText);
     } catch (parseError) {
-      console.error('Failed to parse webhook response as JSON:', parseError);
+      console.error('Failed to parse apps webhook response as JSON:', parseError);
       return new Response(JSON.stringify({ 
-        error: 'Invalid JSON response from webhook',
+        error: 'Invalid JSON response from apps webhook',
         details: parseError.message,
         rawResponse: responseText.substring(0, 500) // First 500 chars for debugging
       }), {
@@ -180,9 +175,9 @@ serve(async (req) => {
     }
 
     if (!Array.isArray(applications)) {
-      console.error('Webhook response is not an array:', typeof applications);
+      console.error('Apps webhook response is not an array:', typeof applications);
       return new Response(JSON.stringify({ 
-        error: 'Webhook response is not an array',
+        error: 'Apps webhook response is not an array',
         responseType: typeof applications,
         response: applications
       }), {
@@ -191,7 +186,7 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Received ${applications.length} applications from webhook`);
+    console.log(`Received ${applications.length} applications from apps webhook`);
 
     let companiesCreated = 0;
     let companiesUpdated = 0;
@@ -331,10 +326,11 @@ serve(async (req) => {
       dealsCreated,
       errors,
       syncedAt: new Date().toISOString(),
-      validationPassed: true,
+      webhookType: 'apps',
+      webhookUrl: webhookUrl,
     };
 
-    console.log('Sync completed:', result);
+    console.log('Apps sync completed:', result);
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

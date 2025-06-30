@@ -77,47 +77,51 @@ const Companies = () => {
     return { totalStatements, reconciledStatements, accountCount };
   };
 
-  // Function to validate webhook configuration
+  // Function to validate webhook configuration for apps (not scorecard)
   const handleValidateWebhook = async () => {
     setIsValidatingWebhook(true);
     try {
-      console.log('Starting webhook validation...');
-      const { data, error } = await supabase.functions.invoke('validate-webhook-auth');
+      console.log('Starting apps webhook validation...');
+      const { data, error } = await supabase.functions.invoke('validate-webhook-auth', {
+        body: { type: 'apps' } // Specify that we want to validate the apps webhook
+      });
       
       if (error) {
-        console.error('Webhook validation error:', error);
+        console.error('Apps webhook validation error:', error);
         toast({
           title: "Validation Error",
-          description: error.message || "Failed to validate webhook configuration",
+          description: error.message || "Failed to validate apps webhook configuration",
           variant: "destructive"
         });
         return;
       }
 
-      console.log('Webhook validation response:', data);
+      console.log('Apps webhook validation response:', data);
       if (data.success) {
         toast({
-          title: "Webhook Valid",
-          description: `Webhook is accessible and authentication is working. Response time: ${data.responseTime}ms`
+          title: "Apps Webhook Valid",
+          description: `Apps webhook is accessible and authentication is working. Response time: ${data.responseTime}ms`
         });
       } else {
         let description = data.error || "Unknown validation error";
         if (data.status === 'not_found') {
-          description = "Webhook URL not found. Please check the URL and ensure your n8n workflow is active.";
+          description = "Apps webhook URL not found. Please check the URL and ensure your n8n apps workflow is active.";
         } else if (data.status === 'auth_failed') {
           description = "Authentication failed. Please check your Basic Auth credentials.";
         } else if (data.status === 'timeout') {
-          description = "Webhook request timed out. Please check if your n8n instance is running.";
+          description = "Apps webhook request timed out. Please check if your n8n instance is running.";
+        } else if (data.status === 'config_error') {
+          description = `Configuration error: ${data.error}. Please ensure N8N_WEBHOOK_URL is set correctly.`;
         }
         
         toast({
-          title: "Webhook Validation Failed",
+          title: "Apps Webhook Validation Failed",
           description,
           variant: "destructive"
         });
       }
     } catch (error) {
-      console.error('Error during webhook validation:', error);
+      console.error('Error during apps webhook validation:', error);
       toast({
         title: "Validation Error",
         description: "An unexpected error occurred during validation. Please try again.",
@@ -218,7 +222,7 @@ const Companies = () => {
             className="flex items-center gap-2"
           >
             <RefreshCw className={`h-4 w-4 ${isValidatingWebhook ? 'animate-spin' : ''}`} />
-            {isValidatingWebhook ? 'Validating...' : 'Test Webhook'}
+            {isValidatingWebhook ? 'Validating...' : 'Test Apps Webhook'}
           </Button>
           <Button
             variant="outline"
