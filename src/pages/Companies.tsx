@@ -14,6 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import CreateCompanyModal from '@/components/companies/CreateCompanyModal';
 import EditCompanyModal from '@/components/companies/EditCompanyModal';
 import type { Database as DatabaseType } from '@/integrations/supabase/types';
+import GenerateScorecardButton from '@/components/GenerateScorecardButton';
 
 type Company = DatabaseType['public']['Tables']['companies']['Row'];
 type Deal = DatabaseType['public']['Tables']['deals']['Row'];
@@ -417,6 +418,12 @@ const Companies = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
+                            <GenerateScorecardButton
+                              company_id={company.id}
+                              external_app_id={company.external_app_id || undefined}
+                              size="sm"
+                              variant="outline"
+                            />
                             <Button
                               size="sm"
                               variant="outline"

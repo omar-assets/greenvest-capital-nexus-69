@@ -549,6 +549,110 @@ export type Database = {
         }
         Relationships: []
       }
+      scorecard_sections: {
+        Row: {
+          created_at: string
+          display_order: number | null
+          id: string
+          scorecard_id: string
+          section_data: Json
+          section_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          scorecard_id: string
+          section_data: Json
+          section_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number | null
+          id?: string
+          scorecard_id?: string
+          section_data?: Json
+          section_name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scorecard_sections_scorecard_id_fkey"
+            columns: ["scorecard_id"]
+            isOneToOne: false
+            referencedRelation: "scorecards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scorecards: {
+        Row: {
+          company_id: string
+          completed_at: string | null
+          created_at: string
+          deal_id: string | null
+          error_message: string | null
+          external_app_id: number | null
+          id: string
+          requested_at: string
+          scorecard_url: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          webhook_request_data: Json | null
+          webhook_response_data: Json | null
+        }
+        Insert: {
+          company_id: string
+          completed_at?: string | null
+          created_at?: string
+          deal_id?: string | null
+          error_message?: string | null
+          external_app_id?: number | null
+          id?: string
+          requested_at?: string
+          scorecard_url?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          webhook_request_data?: Json | null
+          webhook_response_data?: Json | null
+        }
+        Update: {
+          company_id?: string
+          completed_at?: string | null
+          created_at?: string
+          deal_id?: string | null
+          error_message?: string | null
+          external_app_id?: number | null
+          id?: string
+          requested_at?: string
+          scorecard_url?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          webhook_request_data?: Json | null
+          webhook_response_data?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scorecards_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scorecards_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
