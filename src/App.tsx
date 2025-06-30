@@ -6,6 +6,7 @@ import { AuthProvider } from '@/hooks/useAuth';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Layout from '@/components/Layout';
 import Index from '@/pages/Index';
+import AuthPage from '@/components/AuthPage';
 import Dashboard from '@/pages/Dashboard';
 import Deals from '@/pages/Deals';
 import DealDetails from '@/pages/DealDetails';
@@ -21,6 +22,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<Index />} />
+      <Route path="/auth" element={<AuthPage />} />
       <Route path="/dashboard" element={
         <ProtectedRoute>
           <Layout>
