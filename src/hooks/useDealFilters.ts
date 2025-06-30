@@ -1,5 +1,6 @@
 
 import { useState, useMemo } from 'react';
+import { calculatePriorityScore } from '@/utils/priorityUtils';
 import type { Database } from '@/integrations/supabase/types';
 
 type Deal = Database['public']['Tables']['deals']['Row'];
@@ -11,12 +12,8 @@ export const useDealFilters = (deals: Deal[]) => {
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
 
   const getDealPriority = (deal: Deal) => {
-    const daysInStage = Math.floor((Date.now() - new Date(deal.updated_at).getTime()) / (1000 * 60 * 60 * 24));
-    const amount = deal.amount_requested;
-    
-    if (daysInStage > 10 || amount > 150000) return 'urgent';
-    if (daysInStage > 5 || amount > 75000) return 'high';
-    return 'normal';
+    const priorityInfo = calculatePriorityScore(deal.updated_at, deal.amount_requested, deal.stage);
+    return priorityInfo.level;
   };
 
   const filteredDeals = useMemo(() => {
@@ -38,7 +35,7 @@ export const useDealFilters = (deals: Deal[]) => {
       filtered = filtered.filter(deal => deal.stage === stageFilter);
     }
 
-    // Apply priority filter
+    // Apply priority filter using the enhanced priority system
     if (priorityFilter !== 'all') {
       filtered = filtered.filter(deal => getDealPriority(deal) === priorityFilter);
     }

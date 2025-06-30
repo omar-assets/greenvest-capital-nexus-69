@@ -3,7 +3,8 @@ import { Droppable } from 'react-beautiful-dnd';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import DealCard from './DealCard';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle, TrendingUp } from 'lucide-react';
+import { sortDealsByPriority, calculatePriorityScore } from '@/utils/priorityUtils';
 import type { Database } from '@/integrations/supabase/types';
 
 type Deal = Database['public']['Tables']['deals']['Row'];
@@ -32,31 +33,18 @@ const StageColumn = ({ stage, deals, dragLoading }: StageColumnProps) => {
     }).format(amount);
   };
 
-  // Sort deals by priority and then by days in stage
-  const sortedDeals = [...deals].sort((a, b) => {
-    const getDaysInStage = (updatedAt: string) => {
-      return Math.floor((Date.now() - new Date(updatedAt).getTime()) / (1000 * 60 * 60 * 24));
-    };
+  const getPriorityStats = () => {
+    const stats = { urgent: 0, high: 0, normal: 0 };
+    deals.forEach(deal => {
+      const priority = calculatePriorityScore(deal.updated_at, deal.amount_requested, deal.stage);
+      stats[priority.level]++;
+    });
+    return stats;
+  };
 
-    const getPriorityScore = (deal: Deal) => {
-      const daysInStage = getDaysInStage(deal.updated_at);
-      const amount = deal.amount_requested;
-      
-      if (daysInStage > 10 || amount > 150000) return 3; // urgent
-      if (daysInStage > 5 || amount > 75000) return 2; // high
-      return 1; // normal
-    };
-
-    const priorityA = getPriorityScore(a);
-    const priorityB = getPriorityScore(b);
-    
-    if (priorityA !== priorityB) {
-      return priorityB - priorityA; // Higher priority first
-    }
-    
-    // If same priority, sort by days in stage (longer first)
-    return getDaysInStage(b.updated_at) - getDaysInStage(a.updated_at);
-  });
+  // Sort deals by priority score and then by days in stage
+  const sortedDeals = sortDealsByPriority(deals);
+  const priorityStats = getPriorityStats();
 
   return (
     <div className="flex flex-col h-full min-w-[280px]">
@@ -72,11 +60,30 @@ const StageColumn = ({ stage, deals, dragLoading }: StageColumnProps) => {
             )}
           </div>
         </div>
-        {deals.length > 0 && (
+        
+        {/* Priority indicators in header */}
+        <div className="flex items-center justify-between">
           <p className="text-xs text-slate-600 font-medium">
             {formatCurrency(getTotalValue())}
           </p>
-        )}
+          
+          {(priorityStats.urgent > 0 || priorityStats.high > 0) && (
+            <div className="flex items-center gap-1">
+              {priorityStats.urgent > 0 && (
+                <div className="flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3 text-red-500" />
+                  <span className="text-xs text-red-600 font-medium">{priorityStats.urgent}</span>
+                </div>
+              )}
+              {priorityStats.high > 0 && (
+                <div className="flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3 text-orange-500" />
+                  <span className="text-xs text-orange-600 font-medium">{priorityStats.high}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
       
       <Droppable droppableId={stage.id}>
