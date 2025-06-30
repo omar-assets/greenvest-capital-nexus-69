@@ -21,7 +21,7 @@ export const useCompanies = () => {
       .from('companies')
       .select('*')
       .eq('user_id', user.id)
-      .order('company_name', { ascending: true });
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
     return data as Company[];
@@ -178,34 +178,76 @@ export const useCompanies = () => {
     return newCompany as Company;
   };
 
-  // New function to sync applications from webhook
+  // Enhanced sync applications mutation with better cache management
   const syncApplications = useMutation({
     mutationFn: async () => {
       if (!user?.id) throw new Error('User not authenticated');
 
+      console.log('Starting webhook sync...');
       const { data, error } = await supabase.functions.invoke('sync-applications');
       
-      if (error) throw error;
+      if (error) {
+        console.error('Webhook sync error:', error);
+        throw error;
+      }
+
+      console.log('Webhook sync response:', data);
       return data;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['companies'] });
-      queryClient.invalidateQueries({ queryKey: ['deals'] });
+    onSuccess: async (data) => {
+      console.log('Webhook sync completed successfully');
       
+      // Force invalidate and refetch all related queries
+      await queryClient.invalidateQueries({ queryKey: ['companies'] });
+      await queryClient.invalidateQueries({ queryKey: ['deals'] });
+      
+      // Force refetch to ensure UI updates immediately
+      await queryClient.refetchQueries({ queryKey: ['companies', user?.id] });
+      await queryClient.refetchQueries({ queryKey: ['deals', user?.id] });
+      
+      if (data.validationError) {
+        toast({
+          title: "Webhook Validation Failed",
+          description: data.details || "Please validate your webhook configuration first.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       if (data.success) {
+        const message = `Successfully synced ${data.totalApplications} applications. ` +
+          `Created ${data.companiesCreated} companies, ` +
+          `updated ${data.companiesUpdated || 0} companies, ` +
+          `and created ${data.dealsCreated} deals.`;
+        
         toast({
           title: "Applications Synced",
-          description: `Successfully synced ${data.totalApplications} applications. Created ${data.companiesCreated} companies and ${data.dealsCreated} deals.`,
+          description: message,
+        });
+        
+        if (data.errors && data.errors.length > 0) {
+          console.warn('Sync warnings:', data.errors);
+          toast({
+            title: "Sync Completed with Warnings",
+            description: `${data.errors.length} items had issues. Check console for details.`,
+            variant: "destructive"
+          });
+        }
+      } else {
+        toast({
+          title: "Sync Failed",
+          description: data.details || "Failed to sync applications. Please try again.",
+          variant: "destructive"
         });
       }
     },
     onError: (error) => {
+      console.error('Error during webhook sync:', error);
       toast({
         title: "Sync Error",
         description: "Failed to sync applications from webhook. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
-      console.error('Error syncing applications:', error);
     },
   });
 

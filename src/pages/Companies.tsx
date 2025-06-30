@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Building2, Search, Edit, User, RefreshCw, Download } from 'lucide-react';
+import { Plus, Building2, Search, Edit, User, RefreshCw, Download, Clock } from 'lucide-react';
 import { useCompanies } from '@/hooks/useCompanies';
 import { useDeals } from '@/hooks/useDeals';
+import { useRealtimeCompanies } from '@/hooks/useRealtimeCompanies';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import CreateCompanyModal from '@/components/companies/CreateCompanyModal';
@@ -24,11 +26,14 @@ const Companies = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [isBackfilling, setIsBackfilling] = useState(false);
-  const [isSyncingWebhook, setIsSyncingWebhook] = useState(false);
   const [isValidatingWebhook, setIsValidatingWebhook] = useState(false);
   
-  const { companies, isLoading, findOrCreateCompany } = useCompanies();
+  // Use the enhanced hooks
+  const { companies, isLoading, findOrCreateCompany, syncApplications, isSyncing } = useCompanies();
   const { deals } = useDeals();
+  
+  // Enable real-time subscriptions
+  useRealtimeCompanies();
 
   const filteredCompanies = companies.filter(company =>
     company.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -48,6 +53,15 @@ const Companies = () => {
 
   const getCompanyDealsCount = (company: Company) => {
     return getCompanyDeals(company).length;
+  };
+
+  // Check if company was recently synced (within last 5 minutes)
+  const isRecentlySynced = (company: Company) => {
+    if (!company.last_synced_at) return false;
+    const syncTime = new Date(company.last_synced_at);
+    const now = new Date();
+    const diffMinutes = (now.getTime() - syncTime.getTime()) / (1000 * 60);
+    return diffMinutes < 5;
   };
 
   // Function to validate webhook configuration
@@ -100,68 +114,6 @@ const Companies = () => {
       });
     } finally {
       setIsValidatingWebhook(false);
-    }
-  };
-
-  // Function to sync applications from webhook
-  const handleSyncApplications = async () => {
-    setIsSyncingWebhook(true);
-    try {
-      console.log('Starting webhook sync...');
-      
-      const { data, error } = await supabase.functions.invoke('sync-applications');
-      
-      if (error) {
-        console.error('Webhook sync error:', error);
-        toast({
-          title: "Sync Error",
-          description: error.message || "Failed to sync applications from webhook",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      console.log('Webhook sync response:', data);
-
-      if (data.validationError) {
-        toast({
-          title: "Webhook Validation Failed",
-          description: data.details || "Please validate your webhook configuration first.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      if (data.success) {
-        toast({
-          title: "Sync Complete",
-          description: `Successfully synced ${data.totalApplications} applications. Created ${data.companiesCreated} companies, updated ${data.companiesUpdated || 0} companies, and created ${data.dealsCreated} deals.`
-        });
-        
-        if (data.errors && data.errors.length > 0) {
-          console.warn('Sync warnings:', data.errors);
-          toast({
-            title: "Sync Warnings",
-            description: `${data.errors.length} items had issues. Check console for details.`,
-            variant: "destructive"
-          });
-        }
-      } else {
-        toast({
-          title: "Sync Failed",
-          description: data.details || "Failed to sync applications. Please try again.",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error('Error during webhook sync:', error);
-      toast({
-        title: "Sync Error",
-        description: "An unexpected error occurred during sync. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSyncingWebhook(false);
     }
   };
 
@@ -258,12 +210,12 @@ const Companies = () => {
           </Button>
           <Button
             variant="outline"
-            onClick={handleSyncApplications}
-            disabled={isSyncingWebhook}
+            onClick={() => syncApplications()}
+            disabled={isSyncing}
             className="flex items-center gap-2"
           >
-            <Download className={`h-4 w-4 ${isSyncingWebhook ? 'animate-spin' : ''}`} />
-            {isSyncingWebhook ? 'Syncing...' : 'Sync Applications'}
+            <Download className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+            {isSyncing ? 'Syncing...' : 'Sync Applications'}
           </Button>
           <Button
             variant="outline"
@@ -301,6 +253,12 @@ const Companies = () => {
           <CardTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5" />
             Company Directory ({filteredCompanies.length})
+            {isSyncing && (
+              <Badge variant="outline" className="animate-pulse">
+                <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                Syncing...
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -318,8 +276,8 @@ const Companies = () => {
               <div className="flex gap-2 justify-center">
                 <Button
                   variant="outline"
-                  onClick={handleSyncApplications}
-                  disabled={isSyncingWebhook}
+                  onClick={() => syncApplications()}
+                  disabled={isSyncing}
                   className="flex items-center gap-2"
                 >
                   <Download className="h-4 w-4" />
@@ -351,20 +309,28 @@ const Companies = () => {
                 {filteredCompanies.map((company) => (
                   <TableRow key={company.id} className="hover:bg-gray-50">
                     <TableCell>
-                      <div>
-                        <div className="font-medium text-gray-900">
-                          {company.company_name}
+                      <div className="flex items-center gap-2">
+                        <div>
+                          <div className="font-medium text-gray-900 flex items-center gap-2">
+                            {company.company_name}
+                            {isRecentlySynced(company) && (
+                              <Badge variant="outline" className="text-green-600 border-green-600 text-xs">
+                                <Clock className="h-3 w-3 mr-1" />
+                                New
+                              </Badge>
+                            )}
+                          </div>
+                          {company.dba_name && (
+                            <div className="text-sm text-gray-500">
+                              DBA: {company.dba_name}
+                            </div>
+                          )}
+                          {company.external_app_number && (
+                            <div className="text-xs text-blue-600">
+                              App: {company.external_app_number}
+                            </div>
+                          )}
                         </div>
-                        {company.dba_name && (
-                          <div className="text-sm text-gray-500">
-                            DBA: {company.dba_name}
-                          </div>
-                        )}
-                        {company.external_app_number && (
-                          <div className="text-xs text-blue-600">
-                            App: {company.external_app_number}
-                          </div>
-                        )}
                       </div>
                     </TableCell>
                     <TableCell>
