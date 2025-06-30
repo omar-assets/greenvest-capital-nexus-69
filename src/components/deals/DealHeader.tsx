@@ -1,9 +1,11 @@
+
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/utils/formatters';
 import type { Database } from '@/integrations/supabase/types';
-import { Button, ArrowLeft, Edit } from '@/components/ui/button';
-import { StageProgressIndicator } from '@/components/ui/stage-progress-indicator';
-import { DealActionButtons } from '@/components/ui/deal-action-buttons';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, Edit } from 'lucide-react';
+import { StageProgressIndicator } from './StageProgressIndicator';
+import { DealActionButtons } from './DealActionButtons';
 
 type Deal = Database['public']['Tables']['deals']['Row'];
 
@@ -46,7 +48,7 @@ const DealHeader = ({ deal, onBack, onEdit, actions }: DealHeaderProps) => {
           <div>
             <h1 className="text-2xl font-bold flex items-center gap-3">
               {deal.deal_number}
-              <StageProgressIndicator stage={deal.stage} />
+              <StageProgressIndicator currentStage={deal.stage} />
             </h1>
             <p className="text-muted-foreground">{deal.company_name}</p>
           </div>
@@ -57,7 +59,7 @@ const DealHeader = ({ deal, onBack, onEdit, actions }: DealHeaderProps) => {
             <Edit className="h-4 w-4 mr-2" />
             Edit Deal
           </Button>
-          <DealActionButtons deal={deal} />
+          <DealActionButtons />
         </div>
       </div>
 
