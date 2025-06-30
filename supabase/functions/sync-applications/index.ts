@@ -53,15 +53,65 @@ serve(async (req) => {
 
     console.log('Starting webhook sync for user:', user.id);
 
-    // First, validate webhook connectivity
-    console.log('Validating webhook connectivity...');
-    const validationResponse = await supabaseClient.functions.invoke('validate-webhook-auth');
-    
-    if (validationResponse.error) {
-      console.error('Webhook validation failed:', validationResponse.error);
+    // Check environment variables first
+    const webhookUrl = Deno.env.get('N8N_GET_SCORECARD_WEBHOOK_URL');
+    const username = Deno.env.get('N8N_BASIC_AUTH_USERNAME');
+    const password = Deno.env.get('N8N_BASIC_AUTH_PASSWORD');
+
+    if (!webhookUrl || !username || !password) {
+      console.error('Missing required environment variables');
       return new Response(JSON.stringify({ 
-        error: 'Webhook validation failed',
-        details: validationResponse.error.message,
+        error: 'Configuration error: Missing webhook credentials',
+        details: {
+          webhookUrl: webhookUrl ? 'SET' : 'MISSING',
+          username: username ? 'SET' : 'MISSING',
+          password: password ? 'SET' : 'MISSING'
+        },
+        configurationError: true
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Validate webhook connectivity first
+    console.log('Validating webhook connectivity...');
+    try {
+      const validationResponse = await supabaseClient.functions.invoke('validate-webhook-auth');
+      
+      if (validationResponse.error) {
+        console.error('Webhook validation failed:', validationResponse.error);
+        return new Response(JSON.stringify({ 
+          error: 'Webhook validation failed',
+          details: validationResponse.error.message,
+          validationError: true
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      const validation = validationResponse.data;
+      if (!validation.success) {
+        console.error('Webhook validation unsuccessful:', validation);
+        return new Response(JSON.stringify({ 
+          error: 'Webhook validation failed',
+          details: validation.error,
+          status: validation.status,
+          webhookUrl: validation.webhookUrl,
+          validationError: true
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      console.log('Webhook validation successful, proceeding with sync...');
+    } catch (validationError) {
+      console.error('Error during webhook validation:', validationError);
+      return new Response(JSON.stringify({ 
+        error: 'Failed to validate webhook',
+        details: validationError.message,
         validationError: true
       }), {
         status: 500,
@@ -69,39 +119,30 @@ serve(async (req) => {
       });
     }
 
-    const validation = validationResponse.data;
-    if (!validation.success) {
-      console.error('Webhook validation unsuccessful:', validation);
-      return new Response(JSON.stringify({ 
-        error: 'Webhook validation failed',
-        details: validation.error,
-        status: validation.status,
-        webhookUrl: validation.webhookUrl,
-        validationError: true
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    console.log('Webhook validation successful, proceeding with sync...');
-
-    // Get webhook credentials from environment
-    const webhookUrl = Deno.env.get('N8N_WEBHOOK_URL');
-    const username = Deno.env.get('N8N_BASIC_AUTH_USERNAME');
-    const password = Deno.env.get('N8N_BASIC_AUTH_PASSWORD');
-
     // Make authenticated request to n8n webhook
     const basicAuth = btoa(`${username}:${password}`);
     console.log('Calling webhook for data:', webhookUrl);
 
-    const webhookResponse = await fetch(webhookUrl, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Basic ${basicAuth}`,
-        'Content-Type': 'application/json',
-      },
-    });
+    let webhookResponse;
+    try {
+      webhookResponse = await fetch(webhookUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Basic ${basicAuth}`,
+          'Content-Type': 'application/json',
+        },
+      });
+    } catch (fetchError) {
+      console.error('Network error calling webhook:', fetchError);
+      return new Response(JSON.stringify({ 
+        error: 'Network error calling webhook',
+        details: fetchError.message,
+        webhookUrl
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     if (!webhookResponse.ok) {
       console.error('Webhook request failed:', webhookResponse.status, webhookResponse.statusText);
@@ -112,7 +153,8 @@ serve(async (req) => {
         error: 'Failed to fetch applications from webhook',
         status: webhookResponse.status,
         statusText: webhookResponse.statusText,
-        details: errorText
+        details: errorText,
+        webhookUrl
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -120,7 +162,7 @@ serve(async (req) => {
     }
 
     const responseText = await webhookResponse.text();
-    console.log('Raw webhook response:', responseText);
+    console.log('Raw webhook response length:', responseText.length);
 
     let applications: WebhookApplication[];
     try {
@@ -156,18 +198,24 @@ serve(async (req) => {
     let dealsCreated = 0;
     const errors: string[] = [];
 
-    // Process each application
+    // Process each application with better error handling
     for (const app of applications) {
       try {
         console.log(`Processing application: ${app.appnumber} (ID: ${app.appid})`);
 
         // Check if company already exists
-        const { data: existingCompany } = await supabaseClient
+        const { data: existingCompany, error: findError } = await supabaseClient
           .from('companies')
           .select('*')
           .eq('user_id', user.id)
           .eq('external_app_id', app.appid)
           .single();
+
+        if (findError && findError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+          console.error('Error finding existing company:', findError);
+          errors.push(`Failed to check existing company for ${app.appnumber}: ${findError.message}`);
+          continue;
+        }
 
         let companyId: string;
 
@@ -233,12 +281,18 @@ serve(async (req) => {
         }
 
         // Check if deal already exists for this application
-        const { data: existingDeal } = await supabaseClient
+        const { data: existingDeal, error: dealFindError } = await supabaseClient
           .from('deals')
           .select('*')
           .eq('user_id', user.id)
           .eq('company_id', companyId)
           .single();
+
+        if (dealFindError && dealFindError.code !== 'PGRST116') {
+          console.error('Error finding existing deal:', dealFindError);
+          errors.push(`Failed to check existing deal for ${app.appnumber}: ${dealFindError.message}`);
+          continue;
+        }
 
         if (!existingDeal) {
           // Create deal for this application
@@ -264,8 +318,8 @@ serve(async (req) => {
         }
 
       } catch (error) {
-        console.error(`Error processing application ${app.appnumber}:`, error);
-        errors.push(`Failed to process ${app.appnumber}: ${error.message}`);
+        console.error(`Unexpected error processing application ${app.appnumber}:`, error);
+        errors.push(`Unexpected error processing ${app.appnumber}: ${error.message}`);
       }
     }
 

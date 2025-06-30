@@ -11,7 +11,7 @@ const corsHeaders = {
 interface ValidationResult {
   success: boolean;
   webhookUrl: string;
-  status: 'valid' | 'invalid_url' | 'auth_failed' | 'not_found' | 'server_error' | 'timeout';
+  status: 'valid' | 'invalid_url' | 'auth_failed' | 'not_found' | 'server_error' | 'timeout' | 'config_error';
   statusCode?: number;
   error?: string;
   responseTime?: number;
@@ -34,11 +34,21 @@ serve(async (req) => {
       }
     );
 
-    // Get user from JWT token
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
-    if (userError || !user) {
-      console.error('Authentication error:', userError);
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+    // Get user from JWT token with better error handling
+    let user;
+    try {
+      const { data: { user: authUser }, error: userError } = await supabaseClient.auth.getUser();
+      if (userError || !authUser) {
+        console.error('Authentication error:', userError);
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      user = authUser;
+    } catch (authError) {
+      console.error('Authentication exception:', authError);
+      return new Response(JSON.stringify({ error: 'Authentication failed' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -46,18 +56,25 @@ serve(async (req) => {
 
     console.log('Starting webhook validation for user:', user.id);
 
-    // Get webhook credentials from environment - using the consolidated webhook URL
+    // Use the same environment variable as sync-applications
     const webhookUrl = Deno.env.get('N8N_GET_SCORECARD_WEBHOOK_URL');
     const username = Deno.env.get('N8N_BASIC_AUTH_USERNAME');
     const password = Deno.env.get('N8N_BASIC_AUTH_PASSWORD');
 
+    // Better environment variable validation
     if (!webhookUrl || !username || !password) {
       console.error('Missing webhook configuration');
+      const missingVars = [];
+      if (!webhookUrl) missingVars.push('N8N_GET_SCORECARD_WEBHOOK_URL');
+      if (!username) missingVars.push('N8N_BASIC_AUTH_USERNAME');
+      if (!password) missingVars.push('N8N_BASIC_AUTH_PASSWORD');
+      
       return new Response(JSON.stringify({ 
         success: false,
-        status: 'invalid_url',
-        error: 'Webhook configuration missing. Please check your environment variables.',
-        webhookUrl: webhookUrl || 'NOT_SET'
+        status: 'config_error',
+        error: `Missing required environment variables: ${missingVars.join(', ')}`,
+        webhookUrl: webhookUrl || 'NOT_SET',
+        missingVariables: missingVars
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -65,15 +82,17 @@ serve(async (req) => {
     }
 
     // Validate URL format
+    let validUrl;
     try {
-      new URL(webhookUrl);
-    } catch (error) {
-      console.error('Invalid webhook URL format:', error);
+      validUrl = new URL(webhookUrl);
+    } catch (urlError) {
+      console.error('Invalid webhook URL format:', urlError);
       return new Response(JSON.stringify({
         success: false,
         status: 'invalid_url',
         error: 'Invalid webhook URL format',
-        webhookUrl
+        webhookUrl,
+        details: urlError.message
       }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -83,14 +102,13 @@ serve(async (req) => {
     const basicAuth = btoa(`${username}:${password}`);
     const startTime = Date.now();
 
-    // Test webhook with timeout
+    // Test webhook with timeout and better error handling
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
     try {
       console.log('Testing webhook connectivity:', webhookUrl);
       
-      // Try GET first (most common for n8n webhooks)
       const response = await fetch(webhookUrl, {
         method: 'GET',
         headers: {
@@ -156,7 +174,8 @@ serve(async (req) => {
         success: false,
         status: 'server_error',
         error: `Network error: ${error.message}`,
-        webhookUrl
+        webhookUrl,
+        details: error.name
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
