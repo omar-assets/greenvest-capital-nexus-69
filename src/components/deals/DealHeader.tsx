@@ -1,3 +1,4 @@
+
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/utils/formatters';
 import type { Database } from '@/integrations/supabase/types';
@@ -19,24 +20,24 @@ const DealHeader = ({ deal, onBack, onEdit, actions }: DealHeaderProps) => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'New':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+        return 'bg-blue-100 text-blue-800';
       case 'Reviewing Documents':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+        return 'bg-yellow-100 text-yellow-800';
       case 'Underwriting':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+        return 'bg-purple-100 text-purple-800';
       case 'Offer Sent':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
+        return 'bg-orange-100 text-orange-800';
       case 'Funded':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+        return 'bg-green-100 text-green-800';
       case 'Declined':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+        return 'bg-red-100 text-red-800';
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   return (
-    <div className="bg-white rounded-lg border p-6 space-y-4">
+    <div className="bg-white rounded-lg border shadow-sm p-6 space-y-4 animate-fade-in">
       {/* Header Row */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -45,7 +46,7 @@ const DealHeader = ({ deal, onBack, onEdit, actions }: DealHeaderProps) => {
             Back to Deals
           </Button>
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-3">
+            <h1 className="text-2xl font-bold flex items-center gap-3 text-foreground">
               {deal.deal_number}
               <StageProgressIndicator currentStage={deal.stage} />
             </h1>
@@ -63,26 +64,21 @@ const DealHeader = ({ deal, onBack, onEdit, actions }: DealHeaderProps) => {
       </div>
 
       {/* Deal Info Grid */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-slate-300">Deal Number</h2>
-          <p className="text-sm text-slate-400">{deal.deal_number}</p>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Company</h3>
+          <p className="text-lg font-semibold text-foreground">{deal.company_name}</p>
         </div>
-        <div>
-          <h2 className="text-xl font-bold text-slate-300">Company Name</h2>
-          <p className="text-sm text-slate-400">{deal.company_name}</p>
-        </div>
-        <div>
-          <h2 className="text-xl font-bold text-slate-300">Amount Requested</h2>
-          <p className="text-sm text-slate-400">
-            <span className="text-2xl font-bold text-green-400">
-              {formatCurrency(deal.amount_requested)}
-            </span>
-            <p className="text-sm text-slate-400">Requested Amount</p>
+        
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Amount Requested</h3>
+          <p className="text-lg font-semibold text-green-600">
+            {formatCurrency(deal.amount_requested)}
           </p>
         </div>
-        <div>
-          <h2 className="text-xl font-bold text-slate-300">Stage</h2>
+        
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Current Stage</h3>
           <Badge className={getStatusColor(deal.stage)} variant="secondary">
             {deal.stage}
           </Badge>

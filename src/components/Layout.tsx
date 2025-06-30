@@ -38,9 +38,9 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   ];
 
   const NavContent = () => (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col bg-white">
       <div className="flex h-16 shrink-0 items-center border-b px-4">
-        <h1 className="text-xl font-bold text-blue-600">MCA CRM</h1>
+        <h1 className="text-xl font-bold text-primary">MCA CRM</h1>
       </div>
       <nav className="flex-1 space-y-1 px-2 py-4">
         {navigation.map((item) => {
@@ -51,15 +51,15 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
               key={item.name}
               to={item.href}
               onClick={() => setSidebarOpen(false)}
-              className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
+              className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
                 isActive
-                  ? 'bg-blue-100 text-blue-900'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  ? 'bg-primary/10 text-primary border-r-2 border-primary'
+                  : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
               }`}
             >
               <item.icon
-                className={`mr-3 h-5 w-5 flex-shrink-0 ${
-                  isActive ? 'text-blue-500' : 'text-slate-400 group-hover:text-slate-500'
+                className={`mr-3 h-5 w-5 flex-shrink-0 transition-colors ${
+                  isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'
                 }`}
               />
               {item.name}
@@ -67,11 +67,11 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           );
         })}
       </nav>
-      <div className="border-t p-4">
+      <div className="border-t p-4 bg-muted/20">
         <div className="flex items-center">
           <div className="flex-1">
-            <p className="text-sm font-medium text-slate-900">{user?.email}</p>
-            <p className="text-xs text-slate-500">Agent</p>
+            <p className="text-sm font-medium text-foreground">{user?.email}</p>
+            <p className="text-xs text-muted-foreground">Agent</p>
           </div>
           <Button variant="outline" size="sm" onClick={handleSignOut}>
             <LogOut className="h-4 w-4 mr-2" />
@@ -83,9 +83,9 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
   );
 
   return (
-    <div className="flex h-screen bg-slate-50">
+    <div className="flex h-screen bg-background">
       {/* Desktop Sidebar */}
-      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 bg-white shadow-sm">
+      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 bg-white shadow-sm border-r">
         <NavContent />
       </div>
 
@@ -95,7 +95,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           <Button
             variant="outline"
             size="icon"
-            className="lg:hidden fixed top-4 left-4 z-50 bg-white"
+            className="lg:hidden fixed top-4 left-4 z-50 bg-white shadow-sm"
           >
             <Menu className="h-4 w-4" />
           </Button>
@@ -107,7 +107,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
 
       {/* Main Content */}
       <div className="flex flex-1 flex-col lg:pl-64">
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto bg-background">
           <div className="p-6 pt-16 lg:pt-6">
             {children}
           </div>

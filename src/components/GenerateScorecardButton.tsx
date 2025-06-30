@@ -63,7 +63,7 @@ const GenerateScorecardButton = ({
           variant={variant}
           size={size}
           disabled={isDisabled}
-          className={className}
+          className={`transition-all duration-200 hover:shadow-sm ${className}`}
           title={
             !external_app_id 
               ? 'No app ID available - cannot access scorecard'
@@ -80,12 +80,20 @@ const GenerateScorecardButton = ({
           {isGenerating ? 'Generating...' : isGettingScorecard ? 'Getting...' : 'Scorecard'}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={handleGenerateScorecard} disabled={isDisabled}>
+      <DropdownMenuContent align="end" className="bg-white shadow-lg border">
+        <DropdownMenuItem 
+          onClick={handleGenerateScorecard} 
+          disabled={isDisabled}
+          className="hover:bg-muted/50 transition-colors"
+        >
           <FileText className="h-4 w-4 mr-2" />
           Generate New Scorecard
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleGetScorecard} disabled={isDisabled}>
+        <DropdownMenuItem 
+          onClick={handleGetScorecard} 
+          disabled={isDisabled}
+          className="hover:bg-muted/50 transition-colors"
+        >
           <Download className="h-4 w-4 mr-2" />
           Get Existing Scorecard
         </DropdownMenuItem>
