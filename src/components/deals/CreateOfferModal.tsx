@@ -49,7 +49,6 @@ const CreateOfferModal = ({ isOpen, onClose, onSubmit, deal, isCreating }: Creat
     
     const offerData = {
       ...formData,
-      total_payback: calculations.totalPayback,
       daily_payment: calculations.dailyPayment,
       weekly_payment: calculations.weeklyPayment,
       iso_commission: isoCommission,
