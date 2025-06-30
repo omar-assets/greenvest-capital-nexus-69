@@ -375,6 +375,89 @@ export type Database = {
           },
         ]
       }
+      offers: {
+        Row: {
+          amount: number
+          buy_rate: number | null
+          created_at: string
+          daily_payment: number | null
+          deal_id: string
+          expires_at: string | null
+          factor_rate: number
+          id: string
+          iso_commission: number | null
+          notes: string | null
+          offer_number: string
+          payment_frequency: string
+          responded_at: string | null
+          sent_at: string | null
+          status: string
+          term_months: number
+          total_payback: number | null
+          updated_at: string
+          user_id: string
+          version: number
+          viewed_at: string | null
+          weekly_payment: number | null
+        }
+        Insert: {
+          amount: number
+          buy_rate?: number | null
+          created_at?: string
+          daily_payment?: number | null
+          deal_id: string
+          expires_at?: string | null
+          factor_rate?: number
+          id?: string
+          iso_commission?: number | null
+          notes?: string | null
+          offer_number: string
+          payment_frequency?: string
+          responded_at?: string | null
+          sent_at?: string | null
+          status?: string
+          term_months?: number
+          total_payback?: number | null
+          updated_at?: string
+          user_id: string
+          version?: number
+          viewed_at?: string | null
+          weekly_payment?: number | null
+        }
+        Update: {
+          amount?: number
+          buy_rate?: number | null
+          created_at?: string
+          daily_payment?: number | null
+          deal_id?: string
+          expires_at?: string | null
+          factor_rate?: number
+          id?: string
+          iso_commission?: number | null
+          notes?: string | null
+          offer_number?: string
+          payment_frequency?: string
+          responded_at?: string | null
+          sent_at?: string | null
+          status?: string
+          term_months?: number
+          total_payback?: number | null
+          updated_at?: string
+          user_id?: string
+          version?: number
+          viewed_at?: string | null
+          weekly_payment?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offers_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           company_role: string | null
@@ -408,6 +491,10 @@ export type Database = {
     }
     Functions: {
       generate_deal_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_offer_number: {
         Args: Record<PropertyKey, never>
         Returns: string
       }

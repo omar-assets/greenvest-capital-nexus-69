@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useRef } from 'react';
 import UnderwritingTab from '@/components/deals/UnderwritingTab';
+import OffersTab from '@/components/deals/OffersTab';
 
 const DealDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -139,10 +140,7 @@ const DealDetails = () => {
   };
 
   const handleGenerateOffer = () => {
-    toast({
-      title: "Generate Offer",
-      description: "Offer generation will be implemented in the next phase.",
-    });
+    switchToTab('offers');
   };
 
   return (
@@ -233,10 +231,7 @@ const DealDetails = () => {
               </TabsContent>
 
               <TabsContent value="offers">
-                <div className="bg-slate-800 border-slate-700 rounded-lg p-6">
-                  <h3 className="text-lg font-medium text-slate-200 mb-4">Offers</h3>
-                  <p className="text-slate-400">Offer management will be implemented in the next phase.</p>
-                </div>
+                <OffersTab deal={deal} />
               </TabsContent>
             </Tabs>
           </div>
