@@ -13,10 +13,10 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import CreateCompanyModal from '@/components/companies/CreateCompanyModal';
 import EditCompanyModal from '@/components/companies/EditCompanyModal';
-import type { Database } from '@/integrations/supabase/types';
+import type { Database as DatabaseType } from '@/integrations/supabase/types';
 
-type Company = Database['public']['Tables']['companies']['Row'];
-type Deal = Database['public']['Tables']['deals']['Row'];
+type Company = DatabaseType['public']['Tables']['companies']['Row'];
+type Deal = DatabaseType['public']['Tables']['deals']['Row'];
 
 const Companies = () => {
   const navigate = useNavigate();
