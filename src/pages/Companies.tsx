@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Plus, Building2, Search, Edit, FileText, RefreshCw } from 'lucide-react';
+import { Plus, Building2, Search, Edit, User, RefreshCw } from 'lucide-react';
 import { useCompanies } from '@/hooks/useCompanies';
 import { useDeals } from '@/hooks/useDeals';
 import { useToast } from '@/hooks/use-toast';
@@ -104,12 +103,8 @@ const Companies = () => {
     });
   };
 
-  const handleViewAllDeals = (companyId: string) => {
-    navigate('/deals', {
-      state: {
-        filterByCompany: companyId
-      }
-    });
+  const handleViewCompanyProfile = (companyId: string) => {
+    navigate(`/companies/${companyId}`);
   };
 
   if (isLoading) {
@@ -269,10 +264,10 @@ const Companies = () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleViewAllDeals(company.id)}
-                          title="View All Deals"
+                          onClick={() => handleViewCompanyProfile(company.id)}
+                          title="View Company Profile"
                         >
-                          <FileText className="h-3 w-3" />
+                          <User className="h-3 w-3" />
                         </Button>
                       </div>
                     </TableCell>

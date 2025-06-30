@@ -10,6 +10,7 @@ import Dashboard from '@/pages/Dashboard';
 import Deals from '@/pages/Deals';
 import DealDetails from '@/pages/DealDetails';
 import Companies from '@/pages/Companies';
+import CompanyDetails from '@/pages/CompanyDetails';
 import NotFound from '@/pages/NotFound';
 import './App.css';
 
@@ -44,6 +45,13 @@ const AppRoutes = () => {
         <ProtectedRoute>
           <Layout>
             <Companies />
+          </Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/companies/:id" element={
+        <ProtectedRoute>
+          <Layout>
+            <CompanyDetails />
           </Layout>
         </ProtectedRoute>
       } />
