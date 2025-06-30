@@ -8,12 +8,17 @@ import type { Database } from '@/integrations/supabase/types';
 type Scorecard = Database['public']['Tables']['scorecards']['Row'];
 type ScorecardSection = Database['public']['Tables']['scorecard_sections']['Row'];
 
+interface MutationCallbacks {
+  onSuccess?: (data: any) => void;
+  onError?: (error: any) => void;
+}
+
 export const useScorecard = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const getScorecard = useMutation({
+  const scorecardMutation = useMutation({
     mutationFn: async ({ 
       company_id, 
       deal_id, 
@@ -83,6 +88,16 @@ export const useScorecard = () => {
     },
   });
 
+  const getScorecard = (
+    params: { company_id: string; deal_id?: string; external_app_id: number },
+    callbacks?: MutationCallbacks
+  ) => {
+    return scorecardMutation.mutate(params, {
+      onSuccess: callbacks?.onSuccess,
+      onError: callbacks?.onError,
+    });
+  };
+
   const fetchScorecards = async (): Promise<Scorecard[]> => {
     if (!user?.id) return [];
     
@@ -142,8 +157,8 @@ export const useScorecard = () => {
   return {
     scorecards,
     isLoading,
-    getScorecard: getScorecard.mutate,
-    isGettingScorecard: getScorecard.isPending,
+    getScorecard,
+    isGettingScorecard: scorecardMutation.isPending,
     fetchScorecardById,
     fetchScorecardSections,
   };

@@ -60,10 +60,19 @@ const GenerateScorecardButton = ({
       setRequestStatus('idle');
       console.log('Initiating scorecard request for app_id:', external_app_id);
       
-      const result = await getScorecard({
-        company_id,
-        deal_id,
-        external_app_id
+      // Use a promise-based approach to handle the mutation
+      const result = await new Promise<any>((resolve, reject) => {
+        getScorecard(
+          {
+            company_id,
+            deal_id,
+            external_app_id
+          },
+          {
+            onSuccess: (data) => resolve(data),
+            onError: (error) => reject(error)
+          }
+        );
       });
       
       if (result?.scorecard_id) {
